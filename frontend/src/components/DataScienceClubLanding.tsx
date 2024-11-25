@@ -358,7 +358,8 @@ const DataScienceClubLanding = () => {
             </Card>
             </div>
             </section>
-            </div>
+         
+                   </div>
             );
             }
 
