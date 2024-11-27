@@ -1,6 +1,8 @@
 ---
 import "@/styles/globals.css";
-import Login from "@/components/Login";
+import DataScienceClubLanding from "../components/DataScienceClubLanding";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 ---
 
 <!doctype html>
@@ -11,6 +13,8 @@ import Login from "@/components/Login";
     <title>Landing Page - Club de Ciencia de Datos</title>
   </head>
   <body class="flex flex-col min-h-screen">
-    <Login client:load />
+    <Header client:load />
+    <DataScienceClubLanding client:load />
+    <Footer client:load />
   </body>
 </html>

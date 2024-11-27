@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -23,8 +23,31 @@ import {
   BookOpen
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { fetchUserProfile, logout } from '../services/auth';
+
 
 const Dashboard = () => {
+
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await fetchUserProfile();
+        setProfile(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  // if (!profile) {
+  //  return <p>Loading...</p>;
+  // }
+
+
   const [activeTab, setActiveTab] = useState('all');
   
   // Datos de ejemplo para el gráfico de progreso

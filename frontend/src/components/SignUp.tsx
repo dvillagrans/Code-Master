@@ -2,103 +2,180 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { Eye, EyeOff } from 'lucide-react';
-import API from "@/services/api";
+import { LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Line } from 'recharts';
+import { Eye, EyeOff, Sparkles } from 'lucide-react';
 
-const Login = () => {
+const SignUp = () => {
 
-  // State para los datos del formulario
-  const [credentials, setCredentials] = useState({
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
     email: '',
     password: '',
+    confirmPassword: '',
+    agreeTerms: false,
   });
-  
-  // Función para manejar los cambios en los inputs
-  const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value,
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
   
-  // Función para manejar el envío del formulario
-  const handleLogin = async (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
+  
+    if (!formData.agreeTerms) {
+      alert("You must agree to the Terms of Service and Privacy Policy");
+      return;
+    }
+  
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+  
     try {
-      const response = await API.post('login/', credentials);
-      // Guarda el token en localStorage o sessionStorage
-      localStorage.setItem('token', response.data.access);
-      alert('Login successful!');
-      // Redirige al dashboard
-      window.location.href = '/dashboard';
+      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+  
+      if (response.ok) {
+        alert("Account created successfully!");
+        setFormData({
+          firstName: '',
+          lastName: '',
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          agreeTerms: false,
+        });
+      } else {
+        const errorData = await response.json();
+        alert(`Error: ${errorData.detail || "Something went wrong"}`);
+      }
     } catch (error) {
-      console.error(error);
-      alert('Login failed. Please check your credentials.');
+      console.error("Error during registration:", error);
+      alert("Failed to create account. Please try again later.");
     }
   };
-
+  
   
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Datos de ejemplo para el gráfico
+  // Sample data for the chart - showing user growth metrics
   const chartData = [
-    { month: 'Jan', profit: 65, expenses: 85 },
-    { month: 'Feb', profit: 75, expenses: 70 },
-    { month: 'Mar', profit: 60, expenses: 65 },
-    { month: 'Apr', profit: 45, expenses: 55 },
-    { month: 'May', profit: 40, expenses: 50 },
-    { month: 'Jun', profit: 35, expenses: 45 },
-    { month: 'Jul', profit: 30, expenses: 40 },
-    { month: 'Aug', profit: 45, expenses: 60 },
-    { month: 'Sep', profit: 35, expenses: 45 },
-    { month: 'Oct', profit: 50, expenses: 65 },
+    { month: 'Jan', activeUsers: 1200, newSignups: 450 },
+    { month: 'Feb', activeUsers: 1800, newSignups: 620 },
+    { month: 'Mar', activeUsers: 2400, newSignups: 800 },
+    { month: 'Apr', activeUsers: 3100, newSignups: 920 },
+    { month: 'May', activeUsers: 3800, newSignups: 1100 },
+    { month: 'Jun', activeUsers: 4500, newSignups: 1350 },
+    { month: 'Jul', activeUsers: 5200, newSignups: 1500 },
+    { month: 'Aug', activeUsers: 5900, newSignups: 1650 },
+    { month: 'Sep', activeUsers: 6600, newSignups: 1800 },
+    { month: 'Oct', activeUsers: 7500, newSignups: 2000 },
   ];
 
   return (
     <div className="min-h-screen w-full flex">
-      {/* Login Section */}
+      {/* Sign Up Section */}
       <div className="w-full lg:w-5/12 p-8 lg:p-12 flex items-center justify-center">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2a10 10 0 00-7.07 17.07A10 10 0 1012 2z"></path>
-              </svg>
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               CodeMaster Pro
             </span>
           </div>
 
-          {/* Sign In Form */}
+          {/* Sign Up Form */}
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign In</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Welcome back! Please enter your details
+                Join our community of developers and start your journey
               </p>
             </div>
 
             <div className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                <Input
+                  name="firstName"
+                  type="text"
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
+                />
+                </div>
+                <div>
+                <Input
+                  name="lastName"
+                  type="text"
+                  placeholder="Last Name"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
+                />
+                </div>
+              </div>
+
+              {/* username */}
               <div>
               <Input
-                type="email"
-                name="email"
-                placeholder="Enter your email"
+                name="username"
+                type="text"
+                placeholder="Enter your username"
+                value={formData.username}
+                onChange={handleInputChange}
                 className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                onChange={handleChange}
-              />
-
-              <Input  
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="••••••••"
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-                onChange={handleChange}
                 />
+              </div>
 
+
+              {/* Email */}
+              <div>
+              <Input
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full bg-gray-100 dark:bg-gray-800 border-0"
+              />
+              </div>
+
+              {/* Password */}
+              <div className="relative">
+              <Input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
+              />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -112,30 +189,58 @@ const Login = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
-                  <label
-                    htmlFor="remember"
-                    className="text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    Remember for 30 days
-                  </label>
-                </div>
-                <Button
-                  variant="link"
-                  className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+              {/* Confirm Password */}
+              <div className="relative">
+              <Input
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
+              />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  Forgot password
-                </Button>
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="flex items-start space-x-2">
+              <Checkbox
+                name="agreeTerms"
+                id="terms"
+                checked={formData.agreeTerms}
+                onChange={handleInputChange}
+              />
+                <label
+                  htmlFor="terms"
+                  className="text-sm text-gray-500 dark:text-gray-400"
+                >
+                  I agree to the{' '}
+                  <Button variant="link" className="p-0 h-auto text-blue-500 hover:text-blue-600">
+                    Terms of Service
+                  </Button>{' '}
+                  and{' '}
+                  <Button variant="link" className="p-0 h-auto text-blue-500 hover:text-blue-600">
+                    Privacy Policy
+                  </Button>
+                </label>
               </div>
 
               <Button
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-              onClick={handleLogin}
+                onClick={handleFormSubmit}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
               >
-                Sign in
-                </Button>
+                Create Account
+              </Button>
 
 
               <div className="relative">
@@ -184,14 +289,14 @@ const Login = () => {
             </div>
 
             <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-              Don't have an account?{' '}
-                <Button
+              Already have an account?{' '}
+              <Button
                 variant="link"
                 className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                onClick={() => window.location.href = '/signup'}
-                >
-                Sign up
-                </Button>
+                onClick={() => window.location.href = '/'}
+              >
+                Sign in
+              </Button>
             </p>
           </div>
         </div>
@@ -200,30 +305,30 @@ const Login = () => {
       {/* Preview Section */}
       <div className="hidden lg:block lg:w-7/12 bg-gradient-to-br from-blue-500 to-purple-500 p-12">
         <div className="h-full flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl font-bold mb-4">Welcome back!</h1>
+          <h1 className="text-4xl font-bold mb-4">Join Our Community</h1>
           <h2 className="text-3xl font-semibold mb-8">
-            Please sign in to your{' '}
+            Start your journey with{' '}
             <span className="underline decoration-4 decoration-white/30">
               CodeMaster Pro
-            </span>{' '}
-            account
+            </span>
           </h2>
           <p className="text-lg mb-12 text-white/80 text-center max-w-2xl">
-            Access your dashboard, track your progress, and continue your learning journey with our comprehensive coding exercises and challenges.
+            Join thousands of developers who are already improving their coding skills, 
+            participating in challenges, and building amazing projects.
           </p>
 
-          {/* Dashboard Preview */}
+          {/* Community Growth Preview */}
           <div className="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
             <div className="mb-4">
-              <h3 className="text-xl font-semibold mb-2">Sales Report</h3>
+              <h3 className="text-xl font-semibold mb-2">Community Growth</h3>
               <div className="flex space-x-4">
                 <span className="flex items-center">
                   <div className="w-3 h-3 bg-blue-300 rounded-full mr-2"></div>
-                  Profit
+                  Active Users
                 </span>
                 <span className="flex items-center">
                   <div className="w-3 h-3 bg-white/60 rounded-full mr-2"></div>
-                  Expenses
+                  New Sign-ups
                 </span>
               </div>
             </div>
@@ -243,14 +348,14 @@ const Login = () => {
                   />
                   <Line
                     type="monotone"
-                    dataKey="profit"
+                    dataKey="activeUsers"
                     stroke="#93C5FD"
                     strokeWidth={3}
                     dot={{ fill: '#93C5FD', strokeWidth: 2 }}
                   />
                   <Line
                     type="monotone"
-                    dataKey="expenses"
+                    dataKey="newSignups"
                     stroke="rgba(255,255,255,0.6)"
                     strokeWidth={3}
                     dot={{ fill: 'rgba(255,255,255,0.8)', strokeWidth: 2 }}
@@ -272,4 +377,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;
