@@ -2,14 +2,24 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 class CustomUser(AbstractUser):
-    email = models.EmailField(unique=True)
+    ROLE_CHOICES = (
+        ('user', 'User'),
+        ('moderator', 'Moderator'),
+        ('admin', 'Admin'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+    
+    name = models.CharField(max_length=50, default="")
+    last_name = models.CharField(max_length=50, default="")
+    email = models.EmailField(unique=True, default="")
+    terms = models.BooleanField(default=False)  # Consentimiento de términos
+    ejercicios_completados = models.IntegerField(default=0)  # Total de ejercicios completados
+    tasa_exito = models.FloatField(default=0.0)  # Porcentaje de éxito
+    racha = models.IntegerField(default=0)  # Racha actual
+    tiempo_total = models.IntegerField(default=0)  # Tiempo total en minutos
+    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=list)  # Ejercicios resueltos en la última semana
+    nivel = models.CharField(max_length=20, default="Básico")  # Nivel del usuario basado en experiencia
+    puntos_experiencia = models.IntegerField(default=0)  # Puntos de experiencia acumulados
 
-    # Campos personalizados
-    first_name = models.CharField(max_length=30)  # AbstractUser ya incluye esto, pero lo podemos sobrescribir si es necesario.
-    last_name = models.CharField(max_length=30)   # AbstractUser ya incluye esto también.
-    is_google_user = models.BooleanField(default=False)  # Indica si el usuario se registró con Google.
-    date_joined = models.DateTimeField(auto_now_add=True)  # Fecha automática de registro.
-
-    # Retorna el email como representación del usuario.
     def __str__(self):
-        return self.email
+        return self.username

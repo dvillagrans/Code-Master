@@ -4,42 +4,82 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Eye, EyeOff } from 'lucide-react';
-import API from "@/services/api";
+import { Toaster, toast } from 'sonner';
+import API from '../services/api';
+
+
 
 const Login = () => {
 
-  // State para los datos del formulario
   const [credentials, setCredentials] = useState({
     email: '',
     password: '',
-  });
-  
-  // Función para manejar los cambios en los inputs
-  const handleChange = (e) => {
-    setCredentials({
-      ...credentials,
-      [e.target.name]: e.target.value,
-    });
-  };
-  
-  // Función para manejar el envío del formulario
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await API.post('login/', credentials);
-      // Guarda el token en localStorage o sessionStorage
-      localStorage.setItem('token', response.data.access);
-      alert('Login successful!');
-      // Redirige al dashboard
-      window.location.href = '/dashboard';
-    } catch (error) {
-      console.error(error);
-      alert('Login failed. Please check your credentials.');
-    }
-  };
+});
 
+const [isLoading, setIsLoading] = useState(false);
+const [showPassword, setShowPassword] = useState(false);
+
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCredentials({
+        ...credentials,
+        [e.target.name]: e.target.value,
+    });
+};
+
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
   
-  const [showPassword, setShowPassword] = useState(false);
+  if (!credentials.email || !credentials.password) {
+      toast.error('Por favor, complete todos los campos');
+      return;
+  }
+
+  setIsLoading(true);
+
+  try {
+      const response = await API.post('login/', credentials);
+      localStorage.setItem('token', response.data.access);
+      
+      toast.success('Inicio de sesión exitoso', {
+          description: 'Redirigiendo al dashboard...',
+      });
+
+      setTimeout(() => {
+          window.location.href = '/dashboard';
+      }, 1500);
+
+  } catch (error: any) {
+      if (error.response) {
+          switch (error.response.status) {
+              case 401:
+                  toast.error('Credenciales incorrectas', {
+                      description: 'Verifique su correo y contraseña'
+                  });
+                  break;
+              case 500:
+                  toast.error('Error del servidor', {
+                      description: 'Inténtelo de nuevo más tarde'
+                  });
+                  break;
+              default:
+                  toast.error('Error de inicio de sesión', {
+                      description: error.response.data.message || 'Ocurrió un error inesperado'
+                  });
+          }
+      } else if (error.request) {
+          toast.error('Sin respuesta del servidor', {
+              description: 'Verifique su conexión a internet'
+          });
+      } else {
+          toast.error('Error', {
+              description: 'Ocurrió un error inesperado'
+          });
+      }
+      console.error(error);
+  } finally {
+      setIsLoading(false);
+  }
+};
 
   // Datos de ejemplo para el gráfico
   const chartData = [
@@ -73,6 +113,7 @@ const Login = () => {
           </div>
 
           {/* Sign In Form */}
+          <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign In</h2>
@@ -81,36 +122,44 @@ const Login = () => {
               </p>
             </div>
 
+
             <div className="space-y-4">
-              <div>
-              <Input
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                onChange={handleChange}
-              />
+                <div>
+                <Toaster richColors position='top-left' />
+                <div className="space-y-4 relative">
+                  <Input
+                  type="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
+                  onChange={handleChange}
+                  onClick={() => toast.dismiss('Invalid email')}
+                  />
 
-              <Input  
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="••••••••"
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-                onChange={handleChange}
-                />
+                  <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="••••••••"
+                    className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
+                    onChange={handleChange}
+                  onClick={() => toast.dismiss('Invalid password')}
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    {showPassword ? (
                     <EyeOff className="w-5 h-5" />
-                  ) : (
+                    ) : (
                     <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
+                    )}
+                  </button>
+                  </div>
+                </div>
+                </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -131,11 +180,12 @@ const Login = () => {
               </div>
 
               <Button
+              type="submit"
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-              onClick={handleLogin}
+              disabled={isLoading}
               >
-                Sign in
-                </Button>
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+              </Button>
 
 
               <div className="relative">
@@ -194,8 +244,10 @@ const Login = () => {
                 </Button>
             </p>
           </div>
+          </form>
         </div>
       </div>
+
 
       {/* Preview Section */}
       <div className="hidden lg:block lg:w-7/12 bg-gradient-to-br from-blue-500 to-purple-500 p-12">

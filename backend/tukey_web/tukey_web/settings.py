@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,14 +37,31 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # Apps de terceros
+    'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',  # blacklist
+
     
-    # Tu App
+    # Apps
     'users',
+    'exercises',
+    'stats',
+    'challenges',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Token de acceso válido por 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),  # Token de actualización válido por 7 días
+    'ROTATE_REFRESH_TOKENS': True,  # Genera un nuevo refresh token al usarlo
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist para tokens antiguos
+    'AUTH_HEADER_TYPES': ('Bearer',),  # Tipo de encabezado para JWT
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,  # Usa la clave secreta de Django para firmar
+}
 
 
 REST_FRAMEWORK = {
@@ -61,6 +79,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'tukey_web.urls'
@@ -136,3 +156,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4321",  # Tu frontend React
+]

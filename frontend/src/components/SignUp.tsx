@@ -7,6 +7,22 @@ import { Eye, EyeOff, Sparkles } from 'lucide-react';
 
 const SignUp = () => {
 
+  interface SignUpResponse{
+    success: boolean;
+    token?: string;
+    error?: string;
+  }
+
+  interface SignUpData{
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    agreeTerms: boolean;
+  }
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -17,7 +33,7 @@ const SignUp = () => {
     agreeTerms: false,
   });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -25,7 +41,7 @@ const SignUp = () => {
     });
   };
   
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   
     if (!formData.agreeTerms) {

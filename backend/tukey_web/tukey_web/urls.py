@@ -16,11 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from users.views import register_user
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('users.urls')),
-    path("api/register/", register_user, name="register_user"),
-    path("", include("tukey_web.urls")),
+    path('users/', include('users.urls')), 
 ]

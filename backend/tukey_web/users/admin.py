@@ -3,6 +3,6 @@ from .models import CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'is_google_user', 'is_active', 'date_joined')
-    list_filter = ('is_google_user', 'is_active')
+    list_display = ('username', 'email', 'ejercicios_completados', 'tasa_exito', 'racha', 'tiempo_total')
     search_fields = ('username', 'email')
+    ordering = ('date_joined',)
