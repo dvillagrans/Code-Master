@@ -9,7 +9,8 @@ from .serializers import CustomUserSerializer
 from django_ratelimit.decorators import ratelimit
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 
 # Vista protegida para el perfil de usuario
@@ -68,12 +69,6 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]  # Protege las vistas con autenticación
 
 
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
-
 # Vista para cambiar la contraseña del usuario
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -94,3 +89,18 @@ class ChangePasswordView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({"message": "Contraseña actualizada correctamente"})
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+            "last_name": user.last_name,
+            "nivel": user.nivel,
+            "puntos_experiencia": user.puntos_experiencia
+        })

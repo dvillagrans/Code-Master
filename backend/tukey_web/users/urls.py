@@ -5,12 +5,15 @@ from .views import (
     UserProfileView,
     RegisterView,
     UserViewSet,
+    CurrentUserView,
+
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from django.urls import include
 
 # Configuración del router
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
+router.register(r'users', UserViewSet, basename='user')
 
 # Rutas de la app
 urlpatterns = [
@@ -19,6 +22,8 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('register/', RegisterView.as_view(), name='register_user'),
     path('profile/', UserProfileView.as_view(), name='user_profile'),
+    path('current-user/', CurrentUserView.as_view(), name='current_user'),
+    path('', include(router.urls)),
 ]
 
 # Agregar rutas del router

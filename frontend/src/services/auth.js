@@ -1,4 +1,4 @@
-import API from './api';
+import API from './Userapi';
 
 // Verificar si el usuario está autenticado
 export const isAuthenticated = () => !!localStorage.getItem('token');

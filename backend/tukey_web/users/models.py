@@ -12,6 +12,7 @@ class CustomUser(AbstractUser):
     name = models.CharField(max_length=50, default="")
     last_name = models.CharField(max_length=50, default="")
     email = models.EmailField(unique=True, default="")
+    password = models.CharField(max_length=128, default="")
     terms = models.BooleanField(default=False)  # Consentimiento de términos
     ejercicios_completados = models.IntegerField(default=0)  # Total de ejercicios completados
     tasa_exito = models.FloatField(default=0.0)  # Porcentaje de éxito

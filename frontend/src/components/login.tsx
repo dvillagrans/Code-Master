@@ -1,85 +1,55 @@
 import React, { useState } from 'react';
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Eye, EyeOff } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import API from '../services/api';
-
 
 
 const Login = () => {
 
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: '',
-});
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-const [isLoading, setIsLoading] = useState(false);
-const [showPassword, setShowPassword] = useState(false);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCredentials({
-        ...credentials,
-        [e.target.name]: e.target.value,
-    });
-};
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!credentials.email || !credentials.password) {
-      toast.error('Por favor, complete todos los campos');
-      return;
-  }
-
-  setIsLoading(true);
-
-  try {
-      const response = await API.post('login/', credentials);
-      localStorage.setItem('token', response.data.access);
-      
-      toast.success('Inicio de sesión exitoso', {
-          description: 'Redirigiendo al dashboard...',
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/users/token/", {
+        username: formData.email, // Cambia a email si el backend lo soporta
+        password: formData.password,
       });
 
-      setTimeout(() => {
-          window.location.href = '/dashboard';
-      }, 1500);
+      localStorage.setItem("accessToken", response.data.access);
+      localStorage.setItem("refreshToken", response.data.refresh);
 
-  } catch (error: any) {
-      if (error.response) {
-          switch (error.response.status) {
-              case 401:
-                  toast.error('Credenciales incorrectas', {
-                      description: 'Verifique su correo y contraseña'
-                  });
-                  break;
-              case 500:
-                  toast.error('Error del servidor', {
-                      description: 'Inténtelo de nuevo más tarde'
-                  });
-                  break;
-              default:
-                  toast.error('Error de inicio de sesión', {
-                      description: error.response.data.message || 'Ocurrió un error inesperado'
-                  });
-          }
-      } else if (error.request) {
-          toast.error('Sin respuesta del servidor', {
-              description: 'Verifique su conexión a internet'
-          });
-      } else {
-          toast.error('Error', {
-              description: 'Ocurrió un error inesperado'
-          });
-      }
-      console.error(error);
-  } finally {
+      toast.success(`¡Bienvenido de nuevo, ${formData.email}!`);
       setIsLoading(false);
-  }
-};
+      window.location.href = "/dashboard";
+    } catch (error) {
+      setIsLoading(false);
+
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          toast.error(error.response.data.detail || "Credenciales inválidas.");
+        } else if (error.request) {
+          toast.error("El servidor no está disponible. Intenta más tarde.");
+        } else {
+          toast.error("Ocurrió un error inesperado.");
+        }
+      } else {
+        toast.error("Ocurrió un error desconocido.");
+      }
+    }
+  };
 
   // Datos de ejemplo para el gráfico
   const chartData = [

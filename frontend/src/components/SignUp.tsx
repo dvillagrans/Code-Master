@@ -234,7 +234,7 @@ const SignUp = () => {
                 name="agreeTerms"
                 id="terms"
                 checked={formData.agreeTerms}
-                onChange={handleInputChange}
+                onCheckedChange={(checked) => handleInputChange({ target: { name: 'agreeTerms', value: checked, type: 'checkbox', checked } } as unknown as React.ChangeEvent<HTMLInputElement>)}
               />
                 <label
                   htmlFor="terms"
@@ -251,12 +251,14 @@ const SignUp = () => {
                 </label>
               </div>
 
-              <Button
-                onClick={handleFormSubmit}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-              >
-                Create Account
-              </Button>
+              <form onSubmit={handleFormSubmit}>
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                >
+                  Create Account
+                </Button>
+              </form>
 
 
               <div className="relative">
