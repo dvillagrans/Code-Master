@@ -26,7 +26,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { fetchUserProfile, logout } from '../services/auth';
 import axiosInstance from '../lib/axiosConfig';
 
-const Dashboard = () => {
+const Dash = () => {
 
   const [userInfo, setUserInfo] = useState(null);
 
@@ -321,4 +321,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Dash;
