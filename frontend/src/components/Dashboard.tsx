@@ -24,32 +24,32 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchUserProfile, logout } from '../services/auth';
-
+import axiosInstance from '../lib/axiosConfig';
 
 const Dashboard = () => {
 
-  const [profile, setProfile] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const fetchUserInfo = async () => {
       try {
-        const data = await fetchUserProfile();
-        setProfile(data);
+        const response = await axiosInstance.get('/user/profile/');
+        setUserInfo(response.data);
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching user info', error);
+        // Redirigir al login si hay un problema
+        window.location.href = '/';
+
       }
     };
 
-    loadProfile();
+    fetchUserInfo();
   }, []);
 
-  // if (!profile) {
-  //  return <p>Loading...</p>;
-  // }
-
-
-  const [activeTab, setActiveTab] = useState('all');
-  
+  /*if (!userInfo) {
+    return <div>Cargando...</div>;
+  }
+  */
   // Datos de ejemplo para el gráfico de progreso
   const progressData = [
     { day: 'Lun', problems: 4 },
@@ -100,6 +100,7 @@ const Dashboard = () => {
     }
   ];
 
+  /* 
   const getDifficultyColor = (difficulty) => {
     const colors = {
       'Básico': 'bg-green-500/10 text-green-500',
@@ -118,7 +119,7 @@ const Dashboard = () => {
     };
     return colors[status] || 'bg-gray-500/10 text-gray-500';
   };
-
+*/
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       {/* Header */}
@@ -261,12 +262,13 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <div className="flex items-center space-x-3">
                         <h3 className="text-lg font-semibold">{problem.title}</h3>
-                        <Badge className={getDifficultyColor(problem.difficulty)}>
+                        {/*<Badge className={getDifficultyColor(problem.difficulty)}>
                           {problem.difficulty}
                         </Badge>
                         <Badge className={getStatusColor(problem.status)}>
                           {problem.status}
                         </Badge>
+                        */}
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-gray-400">
                         <span className="flex items-center space-x-1">

@@ -52,6 +52,12 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+AUTHENTICATION_BACKENDS = [
+    'users.authentication.EmailBackend',  
+    'django.contrib.auth.backends.ModelBackend',  
+]
+
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Token de acceso válido por 1 hora
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),  # Token de actualización válido por 7 días

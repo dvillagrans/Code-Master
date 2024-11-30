@@ -24,7 +24,7 @@ const Login = () => {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/users/token/", {
-        username: formData.email, // Cambia a email si el backend lo soporta
+        email: formData.email, // Cambia a email si el backend lo soporta
         password: formData.password,
       });
 

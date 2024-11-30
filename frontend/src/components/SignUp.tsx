@@ -4,33 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Line } from 'recharts';
 import { Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Toaster, toast } from 'sonner';
 
 const SignUp = () => {
 
-  interface SignUpResponse{
-    success: boolean;
-    token?: string;
-    error?: string;
-  }
-
-  interface SignUpData{
-    firstName: string;
-    lastName: string;
-    username: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-    agreeTerms: boolean;
-  }
-
+  
   const [formData, setFormData] = useState({
-    firstName: '',
+    name: '',
     lastName: '',
-    username: '',
     email: '',
+    username: '',
     password: '',
     confirmPassword: '',
-    agreeTerms: false,
+    terms: false,
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,52 +30,83 @@ const SignUp = () => {
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   
-    if (!formData.agreeTerms) {
-      alert("You must agree to the Terms of Service and Privacy Policy");
+    // Basic form validation
+    if (!formData.terms) {
+      toast.error('Please agree to the Terms of Service and Privacy Policy');
       return;
     }
-  
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      toast.error('Passwords do not match');
       return;
     }
-  
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+      const response = await fetch("http://127.0.0.1:8000/users/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          first_name: formData.firstName,
+          name: formData.name,
           last_name: formData.lastName,
-          username: formData.username,
           email: formData.email,
+          username: formData.username,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          terms: formData.terms
         }),
       });
   
+      const responseData = await response.json();
+  
       if (response.ok) {
-        alert("Account created successfully!");
+        // Success toast
+        toast.success('Account created successfully!', {
+          description: 'Redirecting to dashboard...'
+        });
+
+        // Store tokens and user info
+        localStorage.setItem('name', responseData.name);
+        localStorage.setItem('last_name', responseData.last_name);
+        localStorage.setItem('email', responseData.email);
+        localStorage.setItem('username', responseData.username);
+        localStorage.setItem('access_token', responseData.tokens.access);
+        localStorage.setItem('refresh_token', responseData.tokens.refresh);
+        
+
+        // Redirect to dashboard after a short delay to show toast
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+        
+        // Reset form
         setFormData({
-          firstName: '',
+          name: '',
           lastName: '',
-          username: '',
           email: '',
+          username: '',
           password: '',
           confirmPassword: '',
-          agreeTerms: false,
+          terms: false,
         });
       } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.detail || "Something went wrong"}`);
+        // Handle specific backend errors
+        const errorMessages = Object.entries(responseData)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n');
+        
+        toast.error('Account creation failed', {
+          description: errorMessages
+        });
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      alert("Failed to create account. Please try again later.");
+      toast.error('Could not create account', {
+        description: 'Please try again later'
+      });
     }
   };
-  
   
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -117,6 +134,7 @@ const SignUp = () => {
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
+              <Toaster richColors position='top-left' />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               CodeMaster Pro
@@ -137,10 +155,10 @@ const SignUp = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                 <Input
-                  name="firstName"
+                  name="name"
                   type="text"
                   placeholder="First Name"
-                  value={formData.firstName}
+                  value={formData.name}
                   onChange={handleInputChange}
                   className="w-full bg-gray-100 dark:bg-gray-800 border-0"
                 />
@@ -233,8 +251,8 @@ const SignUp = () => {
               <Checkbox
                 name="agreeTerms"
                 id="terms"
-                checked={formData.agreeTerms}
-                onCheckedChange={(checked) => handleInputChange({ target: { name: 'agreeTerms', value: checked, type: 'checkbox', checked } } as unknown as React.ChangeEvent<HTMLInputElement>)}
+                checked={formData.terms}
+                onCheckedChange={(checked) => handleInputChange({ target: { name: 'terms', value: checked, type: 'checkbox', checked } } as unknown as React.ChangeEvent<HTMLInputElement>)}
               />
                 <label
                   htmlFor="terms"

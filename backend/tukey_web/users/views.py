@@ -1,66 +1,49 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from .models import CustomUser
-from .serializers import CustomUserSerializer
-from django_ratelimit.decorators import ratelimit
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .serializers import CustomUserSerializer, CustomTokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 # Vista protegida para el perfil de usuario
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]  # Requiere autenticación
 
     def get(self, request):
-        user = request.user  # Obtiene al usuario autenticado
-        return Response({
-            "username": user.username,
-            "email": user.email,
-            "nivel": user.nivel,
-            "puntos_experiencia": user.puntos_experiencia,
-        })
-
-@ratelimit(key='user', rate='5/m', block=True)
-def some_view(request):
-    return Response({"message": "Esta vista está limitada a 5 solicitudes por minuto."})
+        user = request.user
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data)
 
 
 # Personalización del token para incluir más campos del usuario
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-
-        # Agregar campos personalizados al token
-        token['email'] = user.email
-        token['nivel'] = user.nivel
-        token['puntos_experiencia'] = user.puntos_experiencia
-
-        return token
-
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
 # Vista para registrar usuarios
-class RegisterView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "User registered successfully!"}, status=status.HTTP_201_CREATED)
+            user = serializer.save()
+            
+            # Generar tokens para el usuario recién registrado
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                "message": "Usuario registrado exitosamente",
+                "user_id": user.id,
+                "username": user.username,
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token)
+                }
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # Vista de conjunto de usuarios (CRUD)
 class UserViewSet(viewsets.ModelViewSet):
@@ -79,28 +62,24 @@ class ChangePasswordView(APIView):
         new_password = request.data.get('new_password')
 
         if not user.check_password(old_password):
-            return Response({"error": "Contraseña actual incorrecta"}, status=400)
+            return Response({"error": "Contraseña actual incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            validate_password(new_password, user)
+            validate_password(new_password, user=user)
         except ValidationError as e:
-            return Response({"error": e.messages}, status=400)
+            return Response({"error": e.messages}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save()
         return Response({"message": "Contraseña actualizada correctamente"})
 
+
+# Vista para obtener el usuario actual
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        return Response({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "name": user.name,
-            "last_name": user.last_name,
-            "nivel": user.nivel,
-            "puntos_experiencia": user.puntos_experiencia
-        })
+        serializer = CustomUserSerializer(user)
+        return Response(serializer.data)
+

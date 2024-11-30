@@ -1,72 +1,102 @@
 from rest_framework import serializers
-from .models import CustomUser
 from django.contrib.auth.password_validation import validate_password
+from .models import CustomUser
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
 
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True, 
-        required=True, 
-        validators=[validate_password]
-    )
-    password2 = serializers.CharField(write_only=True, required=True)
 
-class UserSerializer(serializers.ModelSerializer):
+# Serializer para personalizar el token
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Agregar campos personalizados al token
+        token['email'] = user.email
+        token['nivel'] = user.nivel
+        token['puntos_experiencia'] = user.puntos_experiencia
+        return token
+
+    def validate(self, attrs):
+        # Sobrescribir para usar email en lugar de username
+        email = attrs.get("username")  # SimpleJWT usa 'username' por defecto
+        password = attrs.get("password")
+
+        # Autenticar al usuario con email
+        user = authenticate(email=email, password=password)
+        if not user:
+            raise AuthenticationFailed("No se encontraron credenciales válidas.")
+
+        # Verificar si el usuario está activo
+        if not user.is_active:
+            raise AuthenticationFailed("Esta cuenta está deshabilitada.")
+
+        # Generar el token
+        token = super().validate(attrs)
+        token['email'] = user.email
+        token['nivel'] = user.nivel
+        token['puntos_experiencia'] = user.puntos_experiencia
+
+        return token
+
+
+
+# Serializer para la creación y manejo de usuarios
+class CustomUserSerializer(serializers.ModelSerializer):
+    confirmPassword = serializers.CharField(write_only=True)
+    terms = serializers.BooleanField(required=True)
+
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'name', 'last_name', 'terms',
-                 'ejercicios_completados', 'tasa_exito', 'racha', 'tiempo_total',
-                 'ejercicios_resueltos_ultimos_siete_dias', 'nivel', 'puntos_experiencia')
+        fields = ['name', 'last_name', 'email', 'username', 'password', 'confirmPassword', 'terms']
         extra_kwargs = {
-            'email': {'required': True}
+            'password': {'write_only': True}
         }
-        
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, min_length=8)
-
+    def validate(self, data):
+        # Validar que las contraseñas coincidan
+        if data['password'] != data.pop('confirmPassword'):
+            raise serializers.ValidationError({"confirmPassword": "Las contraseñas no coinciden."})
+        
+        # Validar que se acepten los términos
+        if not data.get('terms'):
+            raise serializers.ValidationError({"terms": "Debes aceptar los términos y condiciones."})
+        
+        return data
 
     def create(self, validated_data):
+        # Eliminar campos que no están en el modelo
+        validated_data.pop('terms')
+        
+        # Crear usuario con contraseña hasheada
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', '')
+            name=validated_data['name'],
+            last_name=validated_data['last_name']
         )
         return user
-
-class CustomUserSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(write_only=True, required=True)  # Campo para confirmar contraseña
-
+    
+# Serializer para actualizar el perfil de usuario
+class UpdateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'name', 'last_name', 'terms',
-                  'ejercicios_completados', 'tasa_exito', 'racha', 'tiempo_total',
-                  'ejercicios_resueltos_ultimos_siete_dias', 'nivel', 'puntos_experiencia',
-                  'password', 'password2')  # Incluye password y password2
+        fields = ['name', 'last_name', 'email', 'username', 'nivel', 'puntos_experiencia']
         extra_kwargs = {
-            'password': {'write_only': True},  # Password no se muestra en las respuestas
-            'email': {'required': True}       # Email obligatorio
+            'username': {'read_only': True},
+            'nivel': {'read_only': True},
+            'puntos_experiencia': {'read_only': True}
         }
-
-    def validate(self, attrs):
-        # Valida que las contraseñas coincidan
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Las contraseñas no coinciden."})
-
-        # Valida la fortaleza de la contraseña usando las reglas de Django
-        validate_password(attrs['password'])
-
-        return attrs
-
-    def create(self, validated_data):
-        # Remueve password2 antes de crear el usuario
-        validated_data.pop('password2')
-
-        # Crea un usuario con el método create_user (gestiona correctamente la contraseña)
-        user = CustomUser.objects.create_user(**validated_data)
-        return user
+        
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.email = validated_data.get('email', instance.email)
+        instance.save()
+        return instance
