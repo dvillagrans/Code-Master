@@ -5,12 +5,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 
-
-# Serializer para personalizar el token
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth import authenticate
-from rest_framework.exceptions import AuthenticationFailed
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -22,28 +16,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['puntos_experiencia'] = user.puntos_experiencia
         return token
 
-    def validate(self, attrs):
-        # Sobrescribir para usar email en lugar de username
-        email = attrs.get("username")  # SimpleJWT usa 'username' por defecto
-        password = attrs.get("password")
+def validate(self, attrs):
+    email = attrs.get("email")
+    password = attrs.get("password")
 
-        # Autenticar al usuario con email
-        user = authenticate(email=email, password=password)
-        if not user:
-            raise AuthenticationFailed("No se encontraron credenciales válidas.")
+    # Autenticar al usuario con email
+    user = authenticate(username=email, password=password)
+    if not user:
+        raise AuthenticationFailed("No se encontraron credenciales válidas.")
 
-        # Verificar si el usuario está activo
-        if not user.is_active:
-            raise AuthenticationFailed("Esta cuenta está deshabilitada.")
+    # Verificar si el usuario está activo
+    if not user.is_active:
+        raise AuthenticationFailed("Esta cuenta está deshabilitada.")
 
-        # Generar el token
-        token = super().validate(attrs)
-        token['email'] = user.email
-        token['nivel'] = user.nivel
-        token['puntos_experiencia'] = user.puntos_experiencia
+    # Generar el token
+    token = super().validate(attrs)
+    token['email'] = user.email
+    token['nivel'] = user.nivel
+    token['puntos_experiencia'] = user.puntos_experiencia
 
-        return token
-
+    return token
 
 
 # Serializer para la creación y manejo de usuarios

@@ -1,19 +1,18 @@
 from django.db import models
-from users.models import CustomUser
 
 class EstadisticasGlobales(models.Model):
+    # Definición del modelo
     total_usuarios = models.IntegerField(default=0)
-    total_ejercicios_resueltos = models.IntegerField(default=0)
-    promedio_tasa_exito = models.FloatField(default=0.0)
+    total_soluciones = models.IntegerField(default=0)
+    tasa_exito_global = models.FloatField(default=0.0)
 
     def __str__(self):
         return "Estadísticas Globales"
 
 
 class SistemaPuntos(models.Model):
-    usuario = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="puntos")
-    puntos_totales = models.IntegerField(default=0)
-    puntos_semanales = models.IntegerField(default=0)
+    nivel = models.CharField(max_length=50, default="Básico")
+    puntos_requeridos = models.IntegerField(default=100)  # Agregado valor predeterminado
 
     def __str__(self):
-        return f"{self.usuario.username} - {self.puntos_totales} puntos"
+        return f"{self.nivel}: {self.puntos_requeridos} puntos"

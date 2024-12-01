@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,9 +46,11 @@ INSTALLED_APPS = [
     
     # Apps
     'users',
-    'exercises',
+    'problems',
+    'solutions',
+    'testcases',
+    'tags',
     'stats',
-    'challenges',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -57,10 +60,41 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  
 ]
 
+# Configuración de Celery y Redis
+# Configuraciones de Celery
+# Configuraciones de Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'solutions.tasks': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),  # Token de acceso válido por 1 hora
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),  # Token de actualización válido por 7 días
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),  # Token de acceso válido por 7 días
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=31),  # Token de actualización válido por 31 días
     'ROTATE_REFRESH_TOKENS': True,  # Genera un nuevo refresh token al usarlo
     'BLACKLIST_AFTER_ROTATION': True,  # Blacklist para tokens antiguos
     'AUTH_HEADER_TYPES': ('Bearer',),  # Tipo de encabezado para JWT
@@ -73,7 +107,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
+
 
 
 MIDDLEWARE = [

@@ -28,28 +28,10 @@ import axiosInstance from '../lib/axiosConfig';
 
 const Dash = () => {
 
-  const [userInfo, setUserInfo] = useState(null);
+  
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await axiosInstance.get('/user/profile/');
-        setUserInfo(response.data);
-      } catch (error) {
-        console.error('Error fetching user info', error);
-        // Redirigir al login si hay un problema
-        window.location.href = '/';
 
-      }
-    };
 
-    fetchUserInfo();
-  }, []);
-
-  /*if (!userInfo) {
-    return <div>Cargando...</div>;
-  }
-  */
   // Datos de ejemplo para el gráfico de progreso
   const progressData = [
     { day: 'Lun', problems: 4 },
