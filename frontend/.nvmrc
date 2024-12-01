@@ -1,1 +1,3 @@
-18
+install-links=false
+prefer-dedupe=true
+

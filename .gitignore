@@ -10,7 +10,9 @@ __pycache__/
 *.venv
 
 *.astro
-
+node_modules
+.vercel
+dist
 # Node.js / Astro (Frontend)
 node_modules/
 .dist/
