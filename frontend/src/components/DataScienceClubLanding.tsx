@@ -1,6 +1,5 @@
-import React from 'react';
 import { 
-  Book, Code, Users, TrendingUp, ChevronRight, Star, Github, 
+  Book, Code, Users, TrendingUp, ChevronRight, Star, Github , 
   Calendar, Mail, Linkedin, Twitter, Heart,
   BookOpen, Trophy, Target, Coffee
 } from 'lucide-react';

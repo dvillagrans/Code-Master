@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -6,7 +5,6 @@ import {
   CardTitle,
   CardDescription
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Trophy,
@@ -15,7 +13,6 @@ import {
   Brain,
   Search,
   Filter,
-  Calendar,
   Star,
   Clock,
   Activity,
@@ -23,8 +20,6 @@ import {
   BookOpen
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { fetchUserProfile, logout } from '../services/auth';
-import axiosInstance from '../lib/axiosConfig';
 
 const Dash = () => {
 
