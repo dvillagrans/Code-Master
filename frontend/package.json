@@ -14,6 +14,7 @@
     "@astrojs/react": "^3.6.3",
     "@astrojs/tailwind": "^5.1.2",
     "@astrojs/ts-plugin": "^1.10.4",
+    "@astrojs/vercel": "^7.8.2",
     "@radix-ui/react-avatar": "^1.1.1",
     "@radix-ui/react-checkbox": "^1.1.2",
     "@radix-ui/react-hover-card": "^1.1.2",
