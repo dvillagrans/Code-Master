@@ -16,26 +16,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['puntos_experiencia'] = user.puntos_experiencia
         return token
 
-def validate(self, attrs):
-    email = attrs.get("email")
-    password = attrs.get("password")
-
-    # Autenticar al usuario con email
-    user = authenticate(username=email, password=password)
-    if not user:
-        raise AuthenticationFailed("No se encontraron credenciales válidas.")
-
-    # Verificar si el usuario está activo
-    if not user.is_active:
-        raise AuthenticationFailed("Esta cuenta está deshabilitada.")
-
-    # Generar el token
-    token = super().validate(attrs)
-    token['email'] = user.email
-    token['nivel'] = user.nivel
-    token['puntos_experiencia'] = user.puntos_experiencia
-
-    return token
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+    
+        # Autenticar al usuario con email
+        user = authenticate(username=email, password=password)
+        if not user:
+            raise AuthenticationFailed("No se encontraron credenciales válidas.")
+    
+        # Verificar si el usuario está activo
+        if not user.is_active:
+            raise AuthenticationFailed("Esta cuenta está deshabilitada.")
+    
+        # Generar el token
+        token = super().validate(attrs)
+        token['email'] = user.email
+        token['nivel'] = user.nivel
+        token['puntos_experiencia'] = user.puntos_experiencia
+    
+        return token
 
 
 # Serializer para la creación y manejo de usuarios

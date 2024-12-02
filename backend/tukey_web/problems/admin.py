@@ -4,5 +4,5 @@ from .models import Problem
 
 @admin.register(Problem)
 class ProblemAdmin(admin.ModelAdmin):
-    list_display = ('title', 'difficulty', 'created_at')
+    list_display = ('id','title', 'difficulty', 'created_at')
     prepopulated_fields = {'slug': ('title',)}

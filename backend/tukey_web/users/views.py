@@ -8,6 +8,7 @@ from .serializers import CustomUserSerializer, CustomTokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
 
 # Vista protegida para el perfil de usuario
 class UserProfileView(APIView):
@@ -26,6 +27,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 # Vista para registrar usuarios
 class RegisterView(APIView):
+    permission_classes = [AllowAny] 
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():

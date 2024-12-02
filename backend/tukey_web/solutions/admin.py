@@ -3,5 +3,5 @@ from .models import Solution
 
 @admin.register(Solution)
 class SolutionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'problem', 'language', 'created_at')
+    list_display = ('user', 'problem', 'language', 'created_at', 'status')
     search_fields = ('user__username', 'problem__title', 'language')
