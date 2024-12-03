@@ -1,11 +1,89 @@
-import subprocess
+import importlib.util
+import sys
 import os
+import json
 import logging
 from celery import shared_task
-from .models import Solution, TestCase  # Asegúrate de que TestCase esté importado
+from .models import Solution, TestCase
+import ast
 
-# Configurar logging
 logger = logging.getLogger(__name__)
+
+def parse_input(input_str):
+    """
+    Parsea entradas flexiblemente
+    Soporta JSON, literales de Python, y cadenas simples
+    """
+    input_str = input_str.strip()
+    
+    # Intentar parseo JSON
+    try:
+        return json.loads(input_str)
+    except json.JSONDecodeError:
+        # Intentar eval de literales de Python
+        try:
+            return ast.literal_eval(input_str)
+        except (SyntaxError, ValueError):   
+            # Si falla, devolver como está o como lista
+            try:
+                # Intentar separar por comas
+                return [x.strip() for x in input_str.split(',')]
+            except:
+                return input_str
+
+def execute_solution(solution_code, input_data):
+    """
+    Ejecuta dinámicamente la solución con los datos de entrada
+    """
+    # Crear directorio temporal
+    temp_dir = f'/tmp/solution_execution'
+    os.makedirs(temp_dir, exist_ok=True)
+    
+    # Ruta del archivo de solución
+    solution_path = os.path.join(temp_dir, 'solution.py')
+    
+    try:
+        # Añadir encabezado de codificación
+        solution_code = "# -*- coding: utf-8 -*-\n" + solution_code
+        
+        # Validar codificación UTF-8
+        solution_code.encode('utf-8')
+
+        # Escribir código de solución
+        with open(solution_path, 'w', encoding='utf-8') as f:
+            f.write(solution_code)
+        
+        # Importar módulo dinámicamente
+        spec = importlib.util.spec_from_file_location("solution", solution_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        
+        # Encontrar función principal (asume que es la primera función definida)
+        solution_func = None
+        for name, func in module.__dict__.items():
+            if callable(func) and name != '__builtins__':
+                solution_func = func
+                break
+        
+        if not solution_func:
+            raise ValueError("No se encontró función en la solución")
+        
+        # Ejecutar función con datos de entrada
+        if not isinstance(input_data, list):
+            input_data = [input_data]
+        
+        result = solution_func(*input_data)
+        return result
+    
+    except Exception as e:
+        raise RuntimeError(f"Error en ejecución: {str(e)}")
+    finally:
+        # Limpiar archivo temporal
+        try:
+            os.remove(solution_path)
+        except Exception:
+            pass
+
 
 @shared_task(
     bind=True,
@@ -13,112 +91,59 @@ logger = logging.getLogger(__name__)
     default_retry_delay=5
 )
 def evaluate_solution(self, solution_id):
-    logger.info(f"Starting evaluation for solution {solution_id}")
-    
     try:
-        # Recuperar la solución desde la base de datos
         solution = Solution.objects.get(id=solution_id)
-        logger.info(f"Solution retrieved: {solution}")
-
+        
         if not solution.code.strip():
-            logger.warning("Empty code submitted")
             solution.status = "Wrong Answer"
-            solution.output = "Code cannot be empty."
+            solution.output = "Código vacío"
             solution.save()
             return
-
-        # Recuperar los casos de prueba asociados al problema
+        
         testcases = TestCase.objects.filter(problem=solution.problem)
         if not testcases.exists():
-            logger.error(f"No test cases found for problem {solution.problem.id}")
             solution.status = "Error"
-            solution.output = "No test cases available for evaluation."
+            solution.output = "Sin casos de prueba"
             solution.save()
             return
-
-        results = []  # Almacenar resultados individuales de cada caso de prueba
-
-        # Crear un archivo temporal para almacenar el código
-        code_file_path = f"solution_{solution_id}.py"
-        try:
-            with open(code_file_path, "w") as code_file:
-                code_file.write(solution.code)
-            logger.info(f"Temporary code file created: {code_file_path}")
-        except Exception as file_exc:
-            logger.error(f"Failed to create temporary file: {file_exc}")
-            solution.status = "Error"
-            solution.output = "Failed to create temporary file for code execution."
-            solution.save()
-            return
-
-        # Evaluar cada caso de prueba
+        
+        results = []
+        
         for testcase in testcases:
             try:
-                # Ejecutar el archivo con la entrada del caso de prueba
-                result = subprocess.run(
-                    ["python", code_file_path],
-                    input=testcase.input.encode(),
-                    capture_output=True,
-                    text=True,
-                    timeout=5
-                )
-
-                # Registrar información de salida
-                logger.info(f"Test case {testcase.id} completed with return code: {result.returncode}")
-                logger.info(f"stdout: {result.stdout}")
-                logger.error(f"stderr: {result.stderr}")
-
-                # Comparar salida
-                if result.returncode == 0:
-                    if result.stdout.strip() == testcase.expected_output.strip():
-                        results.append({'testcase_id': testcase.id, 'status': 'Passed'})
-                    else:
-                        results.append({'testcase_id': testcase.id, 'status': 'Failed', 'output': result.stdout})
-                else:
-                    stderr_message = result.stderr.lower()
-                    if "recursionerror" in stderr_message:
-                        results.append({'testcase_id': testcase.id, 'status': 'Runtime Error', 'output': 'Recursion depth exceeded.'})
-                    elif "syntaxerror" in stderr_message:
-                        results.append({'testcase_id': testcase.id, 'status': 'Compilation Error', 'output': result.stderr})
-                    elif "memory" in stderr_message:
-                        results.append({'testcase_id': testcase.id, 'status': 'Memory Limit Exceeded', 'output': 'Memory usage exceeded.'})
-                    else:
-                        results.append({'testcase_id': testcase.id, 'status': 'Failed', 'output': result.stderr})
-
-            except subprocess.TimeoutExpired:
-                logger.warning(f"Test case {testcase.id} timed out.")
-                results.append({'testcase_id': testcase.id, 'status': 'Time Limit Exceeded', 'output': 'Execution time exceeded the limit.'})
-            except Exception as test_exc:
-                logger.error(f"Unexpected error during test case {testcase.id}: {test_exc}")
-                results.append({'testcase_id': testcase.id, 'status': 'Error', 'output': str(test_exc)})
-
-        # Determinar el estado general
-        if all(result['status'] == 'Passed' for result in results):
-            solution.status = "Accepted"
-        else:
-            solution.status = "Wrong Answer"
+                # Parseo flexible de inputs
+                input_data = parse_input(testcase.input)
+                
+                # Manejar casos con múltiples argumentos o un solo argumento
+                if not isinstance(input_data, list):
+                    input_data = [input_data]
+                
+                result = execute_solution(solution.code, input_data)
+                
+                passed = str(result).strip() == testcase.expected_output.strip()
+                
+                results.append({
+                    'testcase_id': testcase.id,
+                    'status': 'Passed' if passed else 'Failed',
+                    'output': str(result),
+                    'expected': testcase.expected_output
+                })
+            
+            except Exception as e:
+                results.append({
+                    'testcase_id': testcase.id,
+                    'status': 'Error',
+                    'output': str(e)
+                })
         
-        # Guardar resultados y estado
-        solution.output = results
+        solution.status = 'Accepted' if all(r['status'] == 'Passed' for r in results) else 'Wrong Answer'
+        solution.output = json.dumps(results)
         solution.save()
-        logger.info(f"Solution status saved: {solution.status}")
-
-    except Solution.DoesNotExist:
-        logger.error(f"Solution with ID {solution_id} does not exist.")
-        self.retry(exc=Exception(f"Solution {solution_id} not found"))
-
+        
+        return solution.status
+    
     except Exception as exc:
-        logger.error(f"Unexpected error: {str(exc)}")
-        solution.status = "Error"
-        solution.output = f"An unexpected error occurred: {str(exc)}"
+        solution.status = 'Error'
+        solution.output = str(exc)
         solution.save()
-        raise self.retry(exc=exc)
-
-    finally:
-        # Limpieza del archivo temporal
-        try:
-            if os.path.exists(code_file_path):
-                os.remove(code_file_path)
-                logger.info("Temporary code file removed")
-        except Exception as cleanup_exc:
-            logger.error(f"Failed to clean up temporary file for solution {solution_id}: {cleanup_exc}")
+        raise

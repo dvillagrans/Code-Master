@@ -3,11 +3,29 @@ function toBase64Unicode(str) {
 }
 
 const solutionCode = `
-# Leer dos números de la entrada
-a, b = map(int, input().split())
+def linear_regression(*points):
+    """
+    Calcula los parámetros de la recta de regresión lineal (y = mx + b)
+    :param points: Tuplas de puntos (x, y) desempaquetadas
+    :return: Tupla (m, b) donde m es la pendiente y b es la intersección
+    """
+    # Convertir puntos desempaquetados en una lista
+    points = list(points)
+    
+    n = len(points)
+    if n == 0:
+        raise ValueError("La lista de puntos no puede estar vacía")
+    
+    sum_x = sum(point[0] for point in points)
+    sum_y = sum(point[1] for point in points)
+    sum_xx = sum(point[0]**2 for point in points)
+    sum_xy = sum(point[0] * point[1] for point in points)
+    
+    m = (n * sum_xy - sum_x * sum_y) / (n * sum_xx - sum_x**2)
+    b = (sum_y - m * sum_x) / n
+    
+    return round(m, 2), round(b, 2)
 
-# Calcular la suma
-print(a + b)
 
 `;
 
@@ -22,7 +40,7 @@ console.log("Encoded Code (Base64):", encodedCode);
 
 // Crea el payload con el código codificado
 const payload = {
-    problem_id: 2, // ID del problema
+    problem_id: 4, // ID del problema
     language: "python", // Lenguaje seleccionado
     code: encodedCode, // Código en formato Base64
 };

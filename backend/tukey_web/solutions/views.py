@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Solution
-from problems.models import Problem
 from django.core.exceptions import ValidationError
+from .models import Solution, Problem
+from .tasks import evaluate_solution
 import base64
 import binascii
+
 
 class SubmitSolutionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -14,35 +15,30 @@ class SubmitSolutionView(APIView):
     def post(self, request):
         try:
             data = request.data
-            print("Datos recibidos:", data)
             user = request.user
 
-            # Validar que el campo problem_id está presente
+            # Validar los campos necesarios
             problem_id = data.get('problem_id')
-            if not problem_id:
-                raise ValidationError({'problem_id': 'This field is required.'})
-
-            # Validar que el campo language está presente
             language = data.get('language')
-            if not language:
-                raise ValidationError({'language': 'This field is required.'})
-
-            # Validar que el campo code está presente y decodificarlo
             encoded_code = data.get('code')
-            if not encoded_code:
-                raise ValidationError({'code': 'This field is required.'})
 
+            if not problem_id or not language or not encoded_code:
+                raise ValidationError({
+                    'problem_id': 'This field is required.' if not problem_id else None,
+                    'language': 'This field is required.' if not language else None,
+                    'code': 'This field is required.' if not encoded_code else None,
+                })
+
+            # Decodificar el código
             try:
                 decoded_code = base64.b64decode(encoded_code).decode('utf-8')
-                print("Decoded Code:", decoded_code)
             except (binascii.Error, UnicodeDecodeError) as e:
-                print("Base64 Decoding Error:", e)
                 return Response(
                     {'error': 'Invalid Base64 encoding for code.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                
-            # Validar que el problema existe
+
+            # Verificar que el problema existe
             try:
                 problem = Problem.objects.get(id=problem_id)
             except Problem.DoesNotExist:
@@ -60,8 +56,8 @@ class SubmitSolutionView(APIView):
                 status="Pending"
             )
 
-            # Llamar a la tarea de evaluación
-            solution.trigger_evaluation()
+            # Disparar el task de Celery
+            evaluate_solution.delay(solution.id)
 
             # Retornar respuesta al cliente
             return Response(

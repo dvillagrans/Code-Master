@@ -1,5 +1,6 @@
-
-if __name__ == "__main__":
-    solution = Solution()
-    n = int(input("Ingrese el nÃºmero de escalones: ")) 
-    print(f"Formas de subir {n} escalones: {solution.climbStairs(n)}")
+const solutionCode = `
+# Leer dos números de la entrada
+def read_numbers(a, b):
+# Calcular la suma
+    return print(a + b)
+`;
