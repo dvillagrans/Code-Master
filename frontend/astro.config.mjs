@@ -15,5 +15,7 @@ export default defineConfig({
     react(),
   ],
   output: 'server',
-  adapter: vercel(),
+  adapter: vercel({
+    runtime: 'nodejs18.x'
+  }),
 });
