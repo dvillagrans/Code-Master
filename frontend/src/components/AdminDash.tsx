@@ -95,7 +95,7 @@ const AdminDashboard = () => {
     ]
   });
 
-  const MetricCard = ({ icon: Icon, title, value, trend, description }) => (
+  const MetricCard = ({ icon: Icon, title, value, trend, description }: { icon: React.ComponentType<{ className?: string }>, title: string, value: number | string, trend: number, description?: string }) => (
     <Card className="bg-white/10 backdrop-blur-lg border-none text-white group hover:scale-105 transition-transform">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
