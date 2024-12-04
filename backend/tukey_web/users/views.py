@@ -9,7 +9,9 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
-
+from django.db.models import Avg, Sum, Count
+from django.shortcuts import render
+from users.models import CustomUser
 # Vista protegida para el perfil de usuario
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]  # Requiere autenticación
@@ -85,3 +87,28 @@ class CurrentUserView(APIView):
         serializer = CustomUserSerializer(user)
         return Response(serializer.data)
 
+
+def dashboard(request):
+    """
+    Vista para mostrar las estadísticas generales de los usuarios.
+    """
+    total_usuarios = CustomUser.objects.count()
+    usuarios_activos = CustomUser.objects.filter(ejercicios_completados__gt=0).count()
+    promedio_ejercicios = CustomUser.objects.aggregate(promedio=Avg('ejercicios_completados'))['promedio'] or 0
+    promedio_racha = CustomUser.objects.aggregate(promedio=Avg('racha'))['promedio'] or 0
+    distribucion_niveles = CustomUser.objects.values('nivel').annotate(count=Count('nivel'))
+    distribucion_experiencia = CustomUser.objects.aggregate(
+        max_experiencia=Max('puntos_experiencia'),
+        min_experiencia=Min('puntos_experiencia'),
+        promedio=Avg('puntos_experiencia')
+    )
+
+    context = {
+        'total_usuarios': total_usuarios,
+        'usuarios_activos': usuarios_activos,
+        'promedio_ejercicios': promedio_ejercicios,
+        'promedio_racha': promedio_racha,
+        'distribucion_niveles': distribucion_niveles,
+        'distribucion_experiencia': distribucion_experiencia,
+    }
+    return render(request, 'dashboard.html', context)
