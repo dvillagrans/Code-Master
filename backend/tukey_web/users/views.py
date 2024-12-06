@@ -12,6 +12,43 @@ from rest_framework.permissions import AllowAny
 from django.db.models import Avg, Sum, Count
 from django.shortcuts import render
 from users.models import CustomUser
+from django.http import JsonResponse
+from django.contrib.auth import authenticate
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Max, Min
+from django.http import JsonResponse
+
+
+
+@csrf_exempt  # Si no usas CSRF en el frontend, añade esta excepción
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    username = request.data.get("username")
+    password = request.data.get("password")
+    user = authenticate(request, username=username, password=password)
+    if user:
+        refresh = RefreshToken.for_user(user)
+        response = JsonResponse({
+            'message': 'Login successful',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'nivel': user.nivel,
+                'puntos_experiencia': user.puntos_experiencia,
+            },
+        })
+
+        # Configurar cookies para tokens
+        set_cookie(response, 'access_token', str(refresh.access_token), max_age=3600)
+        set_cookie(response, 'refresh_token', str(refresh), max_age=604800)
+        return response
+    return JsonResponse({'error': 'Invalid credentials'}, status=400)
+
+
 # Vista protegida para el perfil de usuario
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]  # Requiere autenticación
@@ -29,16 +66,15 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 # Vista para registrar usuarios
 class RegisterView(APIView):
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            
-            # Generar tokens para el usuario recién registrado
             refresh = RefreshToken.for_user(user)
-            
-            return Response({
+
+            response = Response({
                 "message": "Usuario registrado exitosamente",
                 "user_id": user.id,
                 "username": user.username,
@@ -47,7 +83,14 @@ class RegisterView(APIView):
                     "access": str(refresh.access_token)
                 }
             }, status=status.HTTP_201_CREATED)
+
+            # Configurar cookies
+            set_cookie(response, 'access_token', str(refresh.access_token), max_age=3600)
+            set_cookie(response, 'refresh_token', str(refresh), max_age=604800)
+
+            return response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # Vista de conjunto de usuarios (CRUD)
 class UserViewSet(viewsets.ModelViewSet):
@@ -112,3 +155,14 @@ def dashboard(request):
         'distribucion_experiencia': distribucion_experiencia,
     }
     return render(request, 'dashboard.html', context)
+
+def set_cookie(response, name, value, max_age=None):
+    response.set_cookie(
+        name,
+        value,
+        httponly=True,
+        secure=True,  # Usa HTTPS en producción
+        samesite='Lax',
+        max_age=max_age
+    )
+

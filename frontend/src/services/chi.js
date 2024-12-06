@@ -25,12 +25,9 @@ def linear_regression(*points):
     b = (sum_y - m * sum_x) / n
     
     return round(m, 2), round(b, 2)
-
-
 `;
 
 const encodedCode = toBase64Unicode(solutionCode);
-
 
 // Imprime el código original
 console.log("Original Code:", solutionCode);

@@ -30,23 +30,24 @@ const SignUp = () => {
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   
-    // Basic form validation
+    // Validaciones básicas
     if (!formData.terms) {
-      toast.error('Please agree to the Terms of Service and Privacy Policy');
+      toast.error("Please agree to the Terms of Service and Privacy Policy");
       return;
     }
-
+  
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
-
+  
     try {
       const response = await fetch("http://127.0.0.1:8000/users/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Permite enviar/recibir cookies
         body: JSON.stringify({
           name: formData.name,
           last_name: formData.lastName,
@@ -54,60 +55,49 @@ const SignUp = () => {
           username: formData.username,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
-          terms: formData.terms
+          terms: formData.terms,
         }),
       });
   
       const responseData = await response.json();
   
       if (response.ok) {
-        // Success toast
-        toast.success('Account created successfully!', {
-          description: 'Redirecting to dashboard...'
+        toast.success("Account created successfully!", {
+          description: "Redirecting to dashboard...",
         });
-
-        // Store tokens and user info
-        localStorage.setItem('name', responseData.name);
-        localStorage.setItem('last_name', responseData.last_name);
-        localStorage.setItem('email', responseData.email);
-        localStorage.setItem('username', responseData.username);
-        localStorage.setItem('access_token', responseData.tokens.access);
-        localStorage.setItem('refresh_token', responseData.tokens.refresh);
-        
-
-        // Redirect to dashboard after a short delay to show toast
+  
+        // Redirigir después de un pequeño retraso
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = "/dashboard";
         }, 1500);
-        
-        // Reset form
+  
+        // Restablecer el formulario
         setFormData({
-          name: '',
-          lastName: '',
-          email: '',
-          username: '',
-          password: '',
-          confirmPassword: '',
+          name: "",
+          lastName: "",
+          email: "",
+          username: "",
+          password: "",
+          confirmPassword: "",
           terms: false,
         });
       } else {
-        // Handle specific backend errors
+        // Manejo de errores del backend
         const errorMessages = Object.entries(responseData)
           .map(([key, value]) => `${key}: ${value}`)
-          .join('\n');
-        
-        toast.error('Account creation failed', {
-          description: errorMessages
+          .join("\n");
+        toast.error("Account creation failed", {
+          description: errorMessages,
         });
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      toast.error('Could not create account', {
-        description: 'Please try again later'
+      toast.error("Could not create account", {
+        description: "Please try again later",
       });
     }
   };
-  
+    
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 

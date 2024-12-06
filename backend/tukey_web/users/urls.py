@@ -23,6 +23,8 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user_profile'),
     path('current-user/', CurrentUserView.as_view(), name='current_user'),
     path('', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    
 ]
 
 # Agregar rutas del router
