@@ -12,30 +12,35 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Agregar campos personalizados al token
         token['email'] = user.email
+        token['username'] = user.username
         token['nivel'] = user.nivel
         token['puntos_experiencia'] = user.puntos_experiencia
         return token
 
     def validate(self, attrs):
-        email = attrs.get("email")
+        login = attrs.get("username")  # Cambiar el nombre del campo en el formulario
         password = attrs.get("password")
-    
-        # Autenticar al usuario con email
-        user = authenticate(username=email, password=password)
+
+        # Intentar autenticar por correo o nombre de usuario
+        user = authenticate(username=login, password=password)
         if not user:
-            raise AuthenticationFailed("No se encontraron credenciales válidas.")
-    
+            user = authenticate(email=login, password=password)  # Intentar por correo
+            if not user:
+                raise AuthenticationFailed("Credenciales inválidas. Verifica tu usuario o correo y contraseña.")
+
         # Verificar si el usuario está activo
         if not user.is_active:
             raise AuthenticationFailed("Esta cuenta está deshabilitada.")
-    
+
         # Generar el token
         token = super().validate(attrs)
         token['email'] = user.email
+        token['username'] = user.username
         token['nivel'] = user.nivel
         token['puntos_experiencia'] = user.puntos_experiencia
-    
+
         return token
+
 
 
 # Serializer para la creación y manejo de usuarios
@@ -45,7 +50,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['name', 'last_name', 'email', 'username', 'password', 'confirmPassword', 'terms']
+        fields = [
+            'name',
+            'last_name',
+            'email', 
+            'username', 
+            'password', 
+            'confirmPassword', 
+            'terms',
+            'id',  # ID del usuario
+            'name',  # Nombre
+            'last_name',  # Apellido
+            'email',  # Correo electrónico
+            'username',  # Nombre de usuario
+            'nivel',  # Nivel del usuario
+            'puntos_experiencia',  # Puntos de experiencia
+            'racha',  # Racha actual
+            'ejercicios_completados',  # Ejercicios completados
+            'avatar'  # Campo para la foto/avatar del usuario
+            'ranking' # Ranking del usuario
+        ]
         extra_kwargs = {
             'password': {'write_only': True}
         }

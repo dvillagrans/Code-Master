@@ -19,44 +19,82 @@ from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max, Min
 from django.http import JsonResponse
-
-
+from django.http import JsonResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+import json
+from rest_framework import status
+from .models import CustomUser
+from .serializers import CustomUserSerializer
+from solutions.models import Solution
+from solutions.serializers import SolutionSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import CustomUser
 
 @csrf_exempt  # Si no usas CSRF en el frontend, añade esta excepción
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
-    user = authenticate(request, username=username, password=password)
-    if user:
-        refresh = RefreshToken.for_user(user)
-        response = JsonResponse({
-            'message': 'Login successful',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'nivel': user.nivel,
-                'puntos_experiencia': user.puntos_experiencia,
-            },
-        })
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user:
+            refresh = RefreshToken.for_user(user)
 
-        # Configurar cookies para tokens
-        set_cookie(response, 'access_token', str(refresh.access_token), max_age=3600)
-        set_cookie(response, 'refresh_token', str(refresh), max_age=604800)
-        return response
-    return JsonResponse({'error': 'Invalid credentials'}, status=400)
+            # Crear la respuesta
+            response = JsonResponse({'message': 'Login successful'})
+            
+            # Configurar las cookies
+            response.set_cookie(
+                'access_token',
+                str(refresh.access_token),
+                httponly=True,
+                secure=False,  # Cambiar a True en producción con HTTPS
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                str(refresh),
+                httponly=True,
+                secure=False,  # Cambiar a True en producción con HTTPS
+                samesite='Lax'
+            )
+            return response
+        return JsonResponse({'error': 'Invalid credentials'}, status=400)
+    return JsonResponse({'error': 'Invalid method'}, status=405)
+
 
 
 # Vista protegida para el perfil de usuario
 class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]  # Requiere autenticación
+    authentication_classes = [JWTAuthentication]  # Usa JWT con cookies
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        serializer = CustomUserSerializer(user)
-        return Response(serializer.data)
+        recent_solutions = Solution.objects.filter(user=user).order_by('-created_at')[:10]
+        recent_solutions_data = SolutionSerializer(recent_solutions, many=True).data
+
+        data = {
+            "name": user.name,
+            "last_name": user.last_name,
+            "nivel": user.nivel,
+            "ranking": user.ranking,
+            "puntos_experiencia": user.puntos_experiencia,
+            "racha": user.racha,
+            "ejercicios_completados": user.ejercicios_completados,
+            "accuracy": user.tasa_exito,
+            "avatar": user.avatar.url if user.avatar else None,
+            "recentSolutions": recent_solutions_data,
+            "ejercicios_resueltos_ultimos_siete_dias": user.ejercicios_resueltos_ultimos_siete_dias,
+        }
+        return Response(data)
 
 
 # Personalización del token para incluir más campos del usuario
@@ -166,3 +204,22 @@ def set_cookie(response, name, value, max_age=None):
         max_age=max_age
     )
 
+
+class UserRankingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = CustomUser.objects.all().order_by('-ranking_score')
+        ranking = [
+            {
+                "username": user.username,
+                "name": user.name,
+                "ranking_score": user.ranking,
+                "nivel": user.nivel,
+                "racha": user.racha,
+                "ejercicios_completados": user.ejercicios_completados,
+                "avatar": user.avatar.url if user.avatar else None,
+            }
+            for user in users
+        ]
+        return Response(ranking)

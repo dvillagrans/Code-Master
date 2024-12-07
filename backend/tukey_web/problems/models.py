@@ -34,5 +34,25 @@ class Problem(models.Model):
 
         super().save(*args, **kwargs)
 
+    def is_completed_by_user(self, user):
+        """
+        Verifica si un usuario ha completado este problema.
+        """
+        from solutions.models import Solution  # Importar localmente para evitar circularidad
+        return Solution.objects.filter(user=user, problem=self, status='Accepted').exists()
+
     def __str__(self):
         return self.title
+
+
+class Example(models.Model):
+    problem = models.ForeignKey(Problem, on_delete=models.CASCADE, related_name='examples')
+    input_data = models.TextField()
+    output_data = models.TextField()
+    explanation = models.TextField()
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"Example for {self.problem.title}"

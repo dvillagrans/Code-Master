@@ -1,8 +1,16 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Count, Q
 from django.utils.timezone import now
-import json
 from datetime import timedelta
+
+
+def user_avatar_upload_path(instance, filename):
+    """
+    Define el directorio donde se guardará el avatar del usuario.
+    """
+    return f"avatars/user_{instance.id}/{filename}"
+
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
@@ -11,61 +19,79 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
-    
+
+    # Información básica
     name = models.CharField(max_length=50, default="")
     last_name = models.CharField(max_length=50, default="")
     email = models.EmailField(unique=True, default="")
     username = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=128, default="")
-    terms = models.BooleanField(default=False)  # Consentimiento de términos
-    
-    # Estadísticas y progresión del usuario
-    ejercicios_completados = models.IntegerField(default=0)  # Total de ejercicios completados
+    terms = models.BooleanField(default=False)
+
+    # Avatar personalizado
+    avatar = models.ImageField(
+        upload_to=user_avatar_upload_path,
+        null=True,
+        blank=True,
+        default="avatars/default_avatar.png"
+    )
+
+    # Estadísticas del usuario
+    ejercicios_completados = models.IntegerField(default=0)  # Ejercicios aceptados
     tasa_exito = models.FloatField(default=0.0)  # Porcentaje de éxito
-    last_exercise_date = models.DateField(null=True, blank=True)  # Última fecha en que completó un ejercicio
-    racha = models.IntegerField(default=0)  # Racha actual
-    tiempo_total = models.IntegerField(default=0)  # Tiempo total en minutos
-    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=list)  # Ejercicios resueltos en la última semana
-    nivel = models.CharField(max_length=20, default="Básico")  # Nivel del usuario basado en experiencia
-    puntos_experiencia = models.IntegerField(default=0)  # Puntos de experiencia acumulados
+    last_exercise_date = models.DateField(null=True, blank=True)  # Último ejercicio resuelto
+    racha = models.IntegerField(default=0)  # Días consecutivos resolviendo problemas
+    tiempo_total = models.IntegerField(default=0)  # Tiempo total en segundos
+    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=list)  # Historial de los últimos 7 días
+    nivel = models.CharField(max_length=20, default="Básico")  # Nivel del usuario
+    puntos_experiencia = models.IntegerField(default=0)  # Puntos acumulados
+    ranking = models.IntegerField(default=0)  # Ranking global del usuario
 
     def __str__(self):
         return self.username
 
-    # Métodos para actualizar estadísticas
     def actualizar_estadisticas(self):
         """
         Actualiza las estadísticas del usuario basadas en sus soluciones.
         """
-        from solutions.models import Solution
-        total_intentos = Solution.objects.filter(user=self).count()
-        soluciones_aceptadas = Solution.objects.filter(user=self, status='Accepted').count()
+        from solutions.models import Solution  # Importación local para evitar circularidad
 
-        self.ejercicios_completados = soluciones_aceptadas
-        self.tasa_exito = (soluciones_aceptadas / total_intentos) * 100 if total_intentos > 0 else 0.0
+        stats = Solution.objects.filter(user=self).aggregate(
+            total_intentos=Count('id'),
+            soluciones_aceptadas=Count('id', filter=Q(status='Accepted'))
+        )
+
+        self.ejercicios_completados = stats['soluciones_aceptadas'] or 0
+        self.tasa_exito = (
+            round((stats['soluciones_aceptadas'] / stats['total_intentos']) * 100, 2)
+            if stats['total_intentos'] > 0 else 0.0
+        )
         self.save()
 
-    def registrar_ejercicio_resuelto(self, fecha=None):
-        """
-        Actualiza el historial de ejercicios resueltos en los últimos 7 días.
-        """
+    def registrar_ejercicio_resuelto(self, fecha=None, tiempo_ejercicio=0):
         if fecha is None:
             fecha = now().date()
 
-        # Agrega el ejercicio resuelto al historial
-        ejercicios = self.ejercicios_resueltos_ultimos_siete_dias
-        for registro in ejercicios:
-            if registro['date'] == fecha.isoformat():
-                registro['count'] += 1
-                break
-        else:
-            ejercicios.append({"date": fecha.isoformat(), "count": 1})
+        self.tiempo_total += tiempo_ejercicio
 
-        # Filtrar solo los últimos 7 días
-        ejercicios = [registro for registro in ejercicios if (now().date() - fecha).days <= 7]
-        self.ejercicios_resueltos_ultimos_siete_dias = ejercicios
+        # Busca el registro del día en el historial
+        ejercicio_dia = next((registro for registro in self.ejercicios_resueltos_ultimos_siete_dias if registro['date'] == fecha.isoformat()), None)
+
+        if ejercicio_dia:
+            # Incrementa el contador si ya existe un registro para ese día
+            ejercicio_dia['count'] += 1
+        else:
+            # Agrega un nuevo registro si no existe
+            self.ejercicios_resueltos_ultimos_siete_dias.append({"date": fecha.isoformat(), "count": 1})
+
+        # Mantiene solo los últimos 7 días
+        self.ejercicios_resueltos_ultimos_siete_dias = self.ejercicios_resueltos_ultimos_siete_dias[-7:]
+
+        self.last_exercise_date = fecha
         self.save()
-        
+
+        self.calcular_racha()
+
     def actualizar_racha(self):
         """
         Actualiza la racha diaria del usuario.
@@ -87,7 +113,7 @@ class CustomUser(AbstractUser):
         # Actualizar la última fecha de ejercicio
         self.last_exercise_date = today
         self.save()
-
+    
     def otorgar_experiencia(self, dificultad, execution_time=None, peak_memory=None):
         """
         Otorga puntos de experiencia al usuario basados en la dificultad del ejercicio,
@@ -111,3 +137,17 @@ class CustomUser(AbstractUser):
         self.save()
     
         return puntos
+
+    def _calcular_nivel(self):
+        """
+        Calcula el nivel del usuario basado en los puntos de experiencia.
+        """
+        if self.puntos_experiencia < 100:
+            return "Básico"
+        elif self.puntos_experiencia < 500:
+            return "Intermedio"
+        else:
+            return "Avanzado"
+        
+        
+        

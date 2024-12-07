@@ -6,11 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { Eye, EyeOff } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-
+import Cookies from 'js-cookie';
 
 const Login = () => {
-
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -21,36 +20,43 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-
+  
     try {
-      const response = await axios.post("http://127.0.0.1:8000/users/token/", {
-        email: formData.email, // Cambia a email si el backend lo soporta
-        password: formData.password,
+      const response = await axios.post(
+        "http://127.0.0.1:8000/users/token/",
+        {
+          username: formData.username, // Aquí se puede usar username o correo
+          password: formData.password,
+        },
+        { withCredentials: true }
+      );
+  
+      // Guardar los tokens en cookies
+      Cookies.set("access_token", response.data.access, {
+        httpOnly: false,
+        secure: true,
+        sameSite: "Lax",
+        expires: 1,
       });
-
-      localStorage.setItem("accessToken", response.data.access);
-      localStorage.setItem("refreshToken", response.data.refresh);
-
-      toast.success(`¡Bienvenido de nuevo, ${formData.email}!`);
+  
+      Cookies.set("refresh_token", response.data.refresh, {
+        httpOnly: false,
+        secure: true,
+        sameSite: "Lax",
+        expires: 7,
+      });
+  
+      toast.success(`¡Bienvenido de nuevo, ${response.data.username}!`);
       setIsLoading(false);
+  
+      // Redirigir al dashboard
       window.location.href = "/dashboard";
     } catch (error) {
       setIsLoading(false);
-
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          toast.error(error.response.data.detail || "Credenciales inválidas.");
-        } else if (error.request) {
-          toast.error("El servidor no está disponible. Intenta más tarde.");
-        } else {
-          toast.error("Ocurrió un error inesperado.");
-        }
-      } else {
-        toast.error("Ocurrió un error desconocido.");
-      }
+      toast.error("Credenciales inválidas. Verifica tu usuario/correo y contraseña.");
     }
   };
-
+  
   // Datos de ejemplo para el gráfico
   const chartData = [
     { month: 'Jan', profit: 65, expenses: 85 },
@@ -97,14 +103,13 @@ const Login = () => {
                 <div>
                 <Toaster richColors position='top-left' />
                 <div className="space-y-4 relative">
-                  <Input
-                  type="email"
-                  name="email"
-                  placeholder="Enter your email"
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                  onChange={handleChange}
-                  onClick={() => toast.dismiss('Invalid email')}
-                  />
+                <Input
+  type="text"
+  name="username"
+  placeholder="Usuario o correo electrónico"
+  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
+  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+/>
 
                   <div className="relative">
                   <Input

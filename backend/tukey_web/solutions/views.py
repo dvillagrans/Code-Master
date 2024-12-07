@@ -7,6 +7,14 @@ from .models import Solution, Problem
 from .tasks import evaluate_solution
 import base64
 import binascii
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Solution
+from .serializers import SolutionSerializer
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import Solution
 
 
 class SubmitSolutionView(APIView):
@@ -79,3 +87,28 @@ class SubmitSolutionView(APIView):
                 {'error': f'An unexpected error occurred: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+class RecentSolutionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        recent_solutions = Solution.objects.filter(user=user).order_by('-created_at')[:10]
+        serializer = SolutionSerializer(recent_solutions, many=True)
+        return Response(serializer.data)
+
+@login_required
+def recent_exercises(request):
+    user = request.user
+    # Obtén las últimas 5 soluciones del usuario
+    recent_solutions = Solution.objects.filter(user=user).order_by('-created_at')[:5]
+    exercises = [
+        {
+            "id": solution.id,
+            "name": solution.problem.title,  # Asegúrate de que 'problem' tiene un campo 'title'
+            "difficulty": solution.problem.difficulty,  # Cambia esto si necesitas otro atributo
+            "date": solution.created_at.strftime('%Y-%m-%d %H:%M'),
+            "status": solution.status,
+        }
+        for solution in recent_solutions
+    ]
+    return JsonResponse({"recent_exercises": exercises})

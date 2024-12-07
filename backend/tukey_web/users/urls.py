@@ -6,6 +6,7 @@ from .views import (
     RegisterView,
     UserViewSet,
     CurrentUserView,
+    UserRankingView
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from django.urls import include
@@ -24,7 +25,8 @@ urlpatterns = [
     path('current-user/', CurrentUserView.as_view(), name='current_user'),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    
+    path('ranking/', UserRankingView.as_view(), name='user-ranking'),
+
 ]
 
 # Agregar rutas del router

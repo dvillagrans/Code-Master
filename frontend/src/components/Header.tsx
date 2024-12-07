@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import { BsHouseDoor, BsCode, BsPerson } from "react-icons/bs";
 import { Sun, Moon, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button"
 
 interface NavLinkProps {
   href: string;
@@ -42,7 +43,16 @@ const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
 };
 
 const Header = () => {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"))
+  }
+
+  useEffect(() => {
+    document.body.classList.remove("light", "dark")
+    document.body.classList.add(theme)
+  }, [theme])
 
   return (
     <header className="shadow-lg border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
@@ -61,16 +71,13 @@ const Header = () => {
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
             <NavLink href="/dashboard" icon={BsPerson}>Profile</NavLink>
             
-            <button 
-              onClick={toggleTheme} 
-              className={`p-2 rounded-full transition-colors duration-300 ${
-                isDarkMode
-                  ? 'bg-gray-700 text-white hover:bg-gray-600'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
+            <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={toggleTheme}
+          >
+            {theme === "light" ? <Moon /> : <Sun />}
+          </Button>
           </nav>
         </div>
       </div>

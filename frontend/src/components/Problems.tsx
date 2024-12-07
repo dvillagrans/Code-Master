@@ -1,264 +1,248 @@
-import React, { useState, useEffect } from "react";
-import { FaSearch, FaFilter, FaStar, FaCheckCircle, FaClock, FaCode, FaTrophy, FaSun, FaMoon } from "react-icons/fa";
-import Header from "@/components/Header";
+import React, { useState, useEffect } from "react"
+import Cookies from "js-cookie"
+import { 
+  Search, 
+  Filter, 
+  Star, 
+  CheckCircle, 
+  Clock, 
+  Code, 
+  Trophy, 
+  Sun, 
+  Moon 
+} from "lucide-react"
 
-const mockProblems = [
-  {
-    id: 1,
-    title: "Two Sum",
-    difficulty: "Easy",
-    description: "Given an array of integers, return indices of the two numbers such that they add up to a specific target.",
-    completed: true,
-    timeLimit: "15 mins",
-    points: 100,
-    category: "Arrays"
-  },
-  {
-    id: 2,
-    title: "Add Two Numbers",
-    difficulty: "Medium",
-    description: "Add two numbers represented by linked lists. The digits are stored in reverse order.",
-    completed: false,
-    timeLimit: "30 mins",
-    points: 200,
-    category: "Linked Lists"
-  },
-  {
-    id: 3,
-    title: "Median of Two Sorted Arrays",
-    difficulty: "Hard",
-    description: "Find the median of two sorted arrays with logarithmic complexity.",
-    completed: false,
-    timeLimit: "45 mins",
-    points: 300,
-    category: "Arrays"
-  },
-  {
-    id: 4,
-    title: "Valid Parentheses",
-    difficulty: "Easy",
-    description: "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    completed: true,
-    timeLimit: "20 mins",
-    points: 150,
-    category: "Strings"
-  },
-  {
-    id: 5,
-    title: "Merge k Sorted Lists",
-    difficulty: "Hard",
-    description: "Merge k sorted linked lists and return it as one sorted list.",
-    completed: false,
-    timeLimit: "50 mins",
-    points: 400,
-    category: "Linked Lists"
-  }
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Toaster } from "@/components/ui/toaster"
+import { useToast } from "../hooks/use-toast"
+import Header from "./Header"
+import Footer from "./Footer"
+
 
 const ProblemsList = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [problems, setProblems] = useState(mockProblems);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [animateCards, setAnimateCards] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [problems, setProblems] = useState<Problem[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All")
+  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
-  // Toggle theme
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  interface Problem {
+    id: number
+    title: string
+    description: string
+    difficulty: string
+    category: string
+    completed: boolean
+    timeLimit: string
+    points: number
+  }
+
+  const categories = ["All", "Arrays", "Strings", "Linked Lists"]
+  const difficulties = ["All", "Easy", "Medium", "Hard"]
 
   useEffect(() => {
-    // Add theme class to body
-    document.body.classList.remove('light', 'dark');
-    document.body.classList.add(theme);
-  }, [theme]);
-
-  useEffect(() => {
-    setAnimateCards(true);
-    const timer = setTimeout(() => setAnimateCards(false), 500);
-    return () => clearTimeout(timer);
-  }, [selectedDifficulty, selectedCategory]);
-
-  const filteredProblems = problems.filter((problem) => {
-    const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      problem.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = selectedDifficulty === "All" || problem.difficulty === selectedDifficulty;
-    const matchesCategory = selectedCategory === "All" || problem.category === selectedCategory;
-    return matchesSearch && matchesDifficulty && matchesCategory;
-  });
-
-  const getDifficultyColor = (difficulty: string) => {
-    // Different color scheme for light and dark modes
-    if (theme === 'light') {
-      switch (difficulty) {
-        case "Easy": return "bg-gradient-to-r from-green-200 to-green-300";
-        case "Medium": return "bg-gradient-to-r from-yellow-200 to-yellow-300";
-        case "Hard": return "bg-gradient-to-r from-red-200 to-red-300";
-        default: return "bg-gradient-to-r from-gray-200 to-gray-300";
+    const fetchProblems = async () => {
+      const accessToken = Cookies.get("access_token")
+      if (!accessToken) {
+        toast({
+          title: "Authentication Error",
+          description: "No access token found",
+          variant: "destructive"
+        })
+        setLoading(false)
+        return
       }
-    } else {
-      switch (difficulty) {
-        case "Easy": return "bg-gradient-to-r from-emerald-400 to-green-500";
-        case "Medium": return "bg-gradient-to-r from-amber-400 to-yellow-500";
-        case "Hard": return "bg-gradient-to-r from-rose-400 to-red-500";
-        default: return "bg-gradient-to-r from-gray-400 to-gray-500";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/problems/list/", {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProblems(data.problems)
+        } else {
+          toast({
+            title: "Fetch Error",
+            description: "Error loading problems",
+            variant: "destructive"
+          })
+        }
+      } catch (error) {
+        toast({
+          title: "Network Error",
+          description: "Could not connect to server",
+          variant: "destructive"
+        })
+      } finally {
+        setLoading(false)
       }
     }
-  };
 
-  const categories = ["All", "Arrays", "Strings", "Linked Lists"];
+    fetchProblems()
+  }, [])
+
+  const filteredProblems = problems.filter((problem) => {
+    const matchesSearch =
+      problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      problem.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesDifficulty =
+      selectedDifficulty === "All" || problem.difficulty === selectedDifficulty
+    const matchesCategory =
+      selectedCategory === "All" || problem.category === selectedCategory
+    return matchesSearch && matchesDifficulty && matchesCategory
+  })
+
+  const getDifficultyVariant = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy": return "secondary"
+      case "Medium": return "default"
+      case "Hard": return "destructive"
+      default: return "secondary"
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="space-y-4">
+          {[1, 2, 3].map((item) => (
+            <Skeleton key={item} className="h-[200px] w-[300px] rounded-xl" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className={`min-h-screen ${
-      theme === 'light' 
-        ? 'bg-gradient-to-br from-gray-100 to-gray-50 text-gray-900' 
-        : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'
-    }`}>
-      {/* Theme Toggle Button */}
-      <button 
-        onClick={toggleTheme} 
-        className={`fixed top-4 right-4 z-50 p-2 rounded-full ${
-          theme === 'light'
-            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-            : 'bg-gray-700 text-white hover:bg-gray-600'
-        } transition-colors duration-300`}
-      >
-        {theme === 'light' ? <FaMoon /> : <FaSun />}
-      </button>
-
-      {/* Header */}
+    <div>
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className={`text-4xl font-bold text-transparent bg-clip-text ${
-            theme === 'light' 
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
-              : 'bg-gradient-to-r from-blue-400 to-purple-500'
-          } mb-8`}>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             Programming Problems
           </h1>
           
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Search problems..."
-                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                  theme === 'light'
-                    ? 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                    : 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400'
-                } focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <FaSearch className={theme === 'light' ? 'absolute left-3 top-4 text-gray-500' : 'absolute left-3 top-4 text-gray-400'} />
-            </div>
-            
-            <div className="flex gap-4">
-              <div className="relative">
-                <select
-                  className={`pl-10 pr-4 py-3 rounded-lg ${
-                    theme === 'light'
-                      ? 'bg-white border border-gray-300 text-gray-900'
-                      : 'bg-gray-800 border border-gray-700 text-white'
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none`}
-                  value={selectedDifficulty}
-                  onChange={(e) => setSelectedDifficulty(e.target.value)}
-                >
-                  <option value="All">All Difficulties</option>
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-                <FaFilter className={theme === 'light' ? 'absolute left-3 top-4 text-gray-500' : 'absolute left-3 top-4 text-gray-400'} />
-              </div>
+        </div>
 
-              <div className="relative">
-                <select
-                  className={`pl-10 pr-4 py-3 rounded-lg ${
-                    theme === 'light'
-                      ? 'bg-white border border-gray-300 text-gray-900'
-                      : 'bg-gray-800 border border-gray-700 text-white'
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none`}
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-                <FaCode className={theme === 'light' ? 'absolute left-3 top-4 text-gray-500' : 'absolute left-3 top-4 text-gray-400'} />
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              placeholder="Search problems..." 
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
+          <div className="flex gap-4">
+            <Select 
+              value={selectedDifficulty} 
+              onValueChange={setSelectedDifficulty}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Difficulty" />
+              </SelectTrigger>
+              <SelectContent>
+                {difficulties.map((diff) => (
+                  <SelectItem key={diff} value={diff}>
+                    {diff} Difficulty
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select 
+              value={selectedCategory} 
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {filteredProblems.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No problems found matching your criteria.
+            </p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProblems.map((problem) => (
-              <div
-                key={problem.id}
-                className={`${
-                  theme === 'light' 
-                    ? 'bg-white shadow-md hover:shadow-lg' 
-                    : 'bg-gray-800'
-                } rounded-lg overflow-hidden transform transition-all duration-300 hover:scale-105 ${animateCards ? "animate-fade-in" : ""}`}
+              <Card 
+                key={problem.id} 
+                className="hover:shadow-lg transition-shadow duration-300"
               >
-                <div className={`h-2 ${getDifficultyColor(problem.difficulty)}`} />
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className={`text-xl font-semibold ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
-                      {problem.title}
-                    </h2>
-                    {problem.completed && (
-                      <FaCheckCircle className="text-green-500 text-xl" />
-                    )}
-                  </div>
-                  <p className={`${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-4 line-clamp-2`}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xl">{problem.title}</CardTitle>
+                  {problem.completed && <CheckCircle className="text-green-500" />}
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground line-clamp-2 mb-4">
                     {problem.description}
                   </p>
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className={`flex items-center gap-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
-                      <FaClock className="text-purple-500" />
-                      {problem.timeLimit}
-                    </span>
-                    <span className={`flex items-center gap-1 ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
-                      <FaTrophy className="text-yellow-500" />
-                      {problem.points} pts
-                    </span>
+                  
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex gap-4">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="text-purple-500 size-4" />
+                        <span>{problem.timeLimit}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Trophy className="text-yellow-500 size-4" />
+                        <span>{problem.points} pts</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`px-3 py-1 rounded-full text-white ${getDifficultyColor(problem.difficulty)}`}>
-                      <FaStar className="inline-block mr-1" />
-                      {problem.difficulty}
-                    </span>
-                    <button
-                      className={`px-4 py-2 rounded-lg hover:scale-105 transition-all duration-300 ${
-                        theme === 'light'
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
-                          : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
-                      }`}
-                      onClick={() => console.log(`View problem ${problem.id}`)}
+
+                  <div className="flex justify-between items-center">
+                    <Badge variant={getDifficultyVariant(problem.difficulty)}>
+                      <Star className="mr-1 size-4" /> {problem.difficulty}
+                    </Badge>
+                    
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => window.location.href = `/problem/${problem.id}`}
                     >
                       Solve Problem
-                    </button>
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-
-          {filteredProblems.length === 0 && (
-            <div className="text-center py-12">
-              <p className={`${theme === 'light' ? 'text-gray-600' : 'text-gray-400'} text-lg`}>
-                No problems found matching your criteria.
-              </p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
+      <Toaster />
     </div>
-  );
-};
+      <Footer />
+</div>
+  )
+}
 
-export default ProblemsList;
+export default ProblemsList
