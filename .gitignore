@@ -24,7 +24,6 @@ output/
 *.tsbuildinfo
 
 # Tailwind / CSS
-tailwind.config.mjs
 postcss.config.js
 
 # TypeScript
@@ -101,5 +100,3 @@ config/settings_local.py
 config/settings/production.py
 config/settings/*.pyc
 
-# Astro
-astro.config.mjs
