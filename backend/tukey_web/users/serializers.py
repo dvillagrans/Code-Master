@@ -41,8 +41,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
-
-
 # Serializer para la creación y manejo de usuarios
 class CustomUserSerializer(serializers.ModelSerializer):
     confirmPassword = serializers.CharField(write_only=True)
@@ -67,8 +65,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'puntos_experiencia',  # Puntos de experiencia
             'racha',  # Racha actual
             'ejercicios_completados',  # Ejercicios completados
-            'avatar'  # Campo para la foto/avatar del usuario
-            'ranking' # Ranking del usuario
+            'avatar',  # Campo para la foto/avatar del usuario
+            'ranking'  # Ranking del usuario
         ]
         extra_kwargs = {
             'password': {'write_only': True}
@@ -98,6 +96,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             last_name=validated_data['last_name']
         )
         return user
+
     
 # Serializer para actualizar el perfil de usuario
 class UpdateUserSerializer(serializers.ModelSerializer):

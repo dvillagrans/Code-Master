@@ -66,8 +66,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Configuración de Celery y Redis
-CELERY_BROKER_URL = os.environ.get('REDIS_URL')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -141,7 +141,8 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get('REDIS_URL')],
+            "hosts": [("127.0.0.1", 6379,2)],
+            "symmetric_encryption_keys": [SECRET_KEY],  # Clave opcional para mayor seguridad
         },
     },
 }
@@ -222,7 +223,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4321",  # Frontend
-    "https://codemaster-two.vercel.app/",
+    "https://codemaster-two.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
