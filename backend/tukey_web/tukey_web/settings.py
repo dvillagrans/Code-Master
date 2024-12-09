@@ -129,7 +129,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-
+    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = 'tukey_web.urls'
@@ -222,6 +222,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4321",  # Frontend
+    "https://codemaster-two.vercel.app/",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
