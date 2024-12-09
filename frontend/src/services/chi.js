@@ -42,15 +42,17 @@ const payload = {
     code: encodedCode, // Código en formato Base64
 };
 
-// Enviar la solicitud a la API
-const response = await fetch("http://127.0.0.1:8000/solutions/submit/", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNzE2NjMyLCJpYXQiOjE3MzMxMTE4MzIsImp0aSI6IjJlY2FmYmVmZDcwOTQ4Y2M4ZTVjYmM2MGM1MmU0NWRmIiwidXNlcl9pZCI6Mn0.XNoE21RTOt8m3X8od2Fn_gzS6lkyYVrqa8T52qHwGRI",
-    },
-    body: JSON.stringify(payload),
-});
+async function submitSolution() {
+    // Enviar la solicitud a la API
+    const response = await fetch("http://127.0.0.1:8000/solutions/submit/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzMzNzE2NjMyLCJpYXQiOjE3MzMxMTE4MzIsImp0aSI6IjJlY2FmYmVmZDcwOTQ4Y2M4ZTVjYmM2MGM1MmU0NWRmIiwidXNlcl9pZCI6Mn0.XNoE21RTOt8m3X8od2Fn_gzS6lkyYVrqa8T52qHwGRI",
+        },
+        body: JSON.stringify(payload),
+    });
 
-// Convertir la respuesta a JSON
-const data = await response.json();
+    // Convertir la respuesta a JSON
+    const data = await response.json();
+}

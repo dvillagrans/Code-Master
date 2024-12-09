@@ -112,3 +112,34 @@ def recent_exercises(request):
         for solution in recent_solutions
     ]
     return JsonResponse({"recent_exercises": exercises})
+
+class SolutionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, solution_id):
+        try:
+            # Verifica que la solución exista y pertenezca al usuario autenticado
+            solution = Solution.objects.get(id=solution_id, user=request.user)
+
+            # Devuelve los detalles de la solución
+            return Response({
+                "solution_id": solution.id,
+                "status": solution.status,
+                "output": solution.output,
+                "execution_time": solution.time,
+                "peak_memory": solution.memory,
+                "created_at": solution.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                "updated_at": solution.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+            }, status=status.HTTP_200_OK)
+
+        except Solution.DoesNotExist:
+            return Response(
+                {"error": "Solution not found or does not belong to the authenticated user."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+

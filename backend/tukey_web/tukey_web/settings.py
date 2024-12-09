@@ -32,6 +32,9 @@ ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [
+    # Web Sockets
+    'channels',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +54,7 @@ INSTALLED_APPS = [
     'testcases',
     'tags',
     'stats',
+    
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -61,8 +65,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Configuración de Celery y Redis
-# Configuraciones de Celery
-# Configuraciones de Celery
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -124,10 +126,24 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 
 ]
 
 ROOT_URLCONF = 'tukey_web.urls'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379,2)],
+            "symmetric_encryption_keys": [SECRET_KEY],  # Clave opcional para mayor seguridad
+        },
+    },
+}
+
+ASGI_APPLICATION = 'tukey_web.asgi.application'
+
 
 TEMPLATES = [
     {

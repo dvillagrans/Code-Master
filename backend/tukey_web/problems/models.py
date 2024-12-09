@@ -17,12 +17,12 @@ class Problem(models.Model):
     tags = models.ManyToManyField(Tag, related_name='problems', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    formula = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        # Automatically generate slug if not provided
         if not self.slug:
             original_slug = slugify(self.title)
             unique_slug = original_slug
@@ -35,10 +35,7 @@ class Problem(models.Model):
         super().save(*args, **kwargs)
 
     def is_completed_by_user(self, user):
-        """
-        Verifica si un usuario ha completado este problema.
-        """
-        from solutions.models import Solution  # Importar localmente para evitar circularidad
+        from solutions.models import Solution
         return Solution.objects.filter(user=user, problem=self, status='Accepted').exists()
 
     def __str__(self):

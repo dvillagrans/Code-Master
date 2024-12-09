@@ -82,80 +82,60 @@ data = {
     ]
 }
 
-Fundamentos de Ciencia de Datos
-Problema 1: Limpiar datos de ventas
-Descripción: Dado un conjunto de datos de ventas con valores faltantes y duplicados, escribe un script para limpiar los datos y generar un resumen estadístico.
-Categoría: Fundamentos de Ciencia de Datos
-Etiquetas: Data Cleaning, Data Wrangling, Missing Data Imputation, Statistical Analysis
-Problema 2: Análisis exploratorio de datos (EDA) de precios de casas
-Descripción: Realiza un análisis exploratorio de un conjunto de datos de precios de casas. Genera visualizaciones para las distribuciones de precios y relaciones entre variables.
-Categoría: Fundamentos de Ciencia de Datos
-Etiquetas: Exploratory Data Analysis (EDA), Data Visualization, Outlier Detection
-Machine Learning
-Problema 3: Predicción de precios de casas
-Descripción: Utiliza regresión lineal para predecir el precio de una casa en función de sus características.
-Categoría: Machine Learning
-Etiquetas: Supervised Learning, Linear Regression, Model Evaluation, R-Squared
-Problema 4: Clasificación de clientes
-Descripción: Clasifica a los clientes en segmentos utilizando árboles de decisión basados en sus características demográficas y comportamiento de compra.
-Categoría: Machine Learning
-Etiquetas: Decision Trees, Clustering, K-Means, Cross-Validation
-Deep Learning
-Problema 5: Clasificación de imágenes
-Descripción: Entrena un modelo de red neuronal convolucional (CNN) para clasificar imágenes en tres categorías: gatos, perros y pájaros.
-Categoría: Deep Learning
-Etiquetas: Neural Networks, Convolutional Neural Networks (CNNs), Image Classification
-Problema 6: Generación de texto
-Descripción: Utiliza un modelo basado en Transformers para generar texto en un estilo específico (e.g., poesía, prosa).
-Categoría: Deep Learning
-Etiquetas: Transformers, Text Generation, Language Models (e.g., GPT)
-Natural Language Processing (NLP)
-Problema 7: Análisis de sentimientos
-Descripción: Construye un modelo que clasifique los comentarios de usuarios como positivos, negativos o neutros.
-Categoría: Natural Language Processing (NLP)
-Etiquetas: Sentiment Analysis, Text Classification, Bag-of-Words, Word Embeddings
-Problema 8: Reconocimiento de entidades
-Descripción: Extrae nombres de personas, organizaciones y ubicaciones de un conjunto de datos de noticias.
-Categoría: Natural Language Processing (NLP)
-Etiquetas: Named Entity Recognition (NER), Topic Modeling, TF-IDF
-Computer Vision
-Problema 9: Detección de objetos
-Descripción: Utiliza un modelo de detección de objetos para identificar automóviles en imágenes de tráfico.
-Categoría: Computer Vision
-Etiquetas: Object Detection, Semantic Segmentation, Image Augmentation
-Problema 10: Reconocimiento óptico de caracteres (OCR)
-Descripción: Desarrolla un sistema que extraiga texto de imágenes de documentos.
-Categoría: Computer Vision
-Etiquetas: Optical Character Recognition (OCR), Style Transfer
-Time Series Analysis
-Problema 11: Predicción de demanda
-Descripción: Predice la demanda de energía eléctrica para los próximos 30 días utilizando datos históricos.
-Categoría: Time Series Analysis
-Etiquetas: Forecasting, ARIMA, Seasonality and Trends
-Problema 12: Detección de anomalías
-Descripción: Identifica puntos anómalos en una serie temporal de datos financieros.
-Categoría: Time Series Analysis
-Etiquetas: Anomaly Detection, Rolling Statistics, Dynamic Time Warping
-Reinforcement Learning
-Problema 13: Entrenamiento de un agente en un entorno de laberinto
-Descripción: Diseña un agente que encuentre la salida de un laberinto utilizando Q-Learning.
-Categoría: Reinforcement Learning
-Etiquetas: Q-Learning, Markov Decision Processes (MDPs), Policy Gradient Methods
-Problema 14: Juego de Tic-Tac-Toe
-Descripción: Entrena un agente para jugar al Tic-Tac-Toe utilizando Deep Q-Networks (DQN).
-Categoría: Reinforcement Learning
-Etiquetas: Deep Q-Networks (DQN), Game Theory
-Big Data & Distributed Computing
-Problema 15: Análisis de logs de servidor
-Descripción: Usa Apache Spark para analizar un conjunto masivo de logs de un servidor web.
-Categoría: Big Data & Distributed Computing
-Etiquetas: Spark, MapReduce, Parallel Processing, Data Pipelines
-Applications
-Problema 16: Detección de fraude
-Descripción: Desarrolla un modelo para identificar transacciones sospechosas en un conjunto de datos de pagos electrónicos.
-Categoría: Applications
-Etiquetas: Fraud Detection, Predictive Maintenance, Data Privacy
-Problema 17: Sistemas de recomendación
-Descripción: Diseña un sistema de recomendación para sugerir productos basados en el historial de compras del usuario.
-Categoría: Applications
-Etiquetas: Recommender Systems, Customer Segmentation, Dynamic Pricing
+# Esqueleto para crear problemas en Django
+
+from tags.models import Tag, Category
+from problems.models import Problem, Example
+from testcases.models import TestCase
+
+# Crear o buscar la categoría
+category, _ = Category.objects.get_or_create(
+    name="",
+    defaults={"description": ""}
+)
+
+# Crear o buscar etiquetas
+tag1, _ = Tag.objects.get_or_create(name="", category=category)
+tag2, _ = Tag.objects.get_or_create(name="", category=category)
+
+# Crear el problema
+problem = Problem.objects.create(
+    title="",
+    description="",
+    difficulty="",
+    category=category,
+    formula=""
+)
+
+# Agregar etiquetas al problema
+problem.tags.add(tag1, tag2)
+
+# Crear ejemplos relacionados
+Example.objects.create(
+    problem=problem,
+    input_data="",
+    output_data="",
+    explanation=""
+)
+
+Example.objects.create(
+    problem=problem,
+    input_data="",
+    output_data="",
+    explanation=""
+)
+
+# Crear casos de prueba
+TestCase.objects.create(
+    problem=problem,
+    input="",
+    expected_output="",
+    visibility=True
+)
+
+TestCase.objects.create(
+    problem=problem,
+    input="",
+    expected_output="",
+    visibility=False
+)

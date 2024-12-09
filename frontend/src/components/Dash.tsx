@@ -10,8 +10,8 @@ import {
   BsClock,
   BsXCircle,
 } from "react-icons/bs";
-import { Award } from "lucide-react";
-import { Clock, BookOpen } from "lucide-react";
+import { Award, Trophy, Star, Activity, Code, CheckCircle, XCircle } from "lucide-react";
+import { Clock, BookOpen,  } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -20,7 +20,13 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
+
 } from "recharts";
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 
 interface StatCardProps {
   title: string;
@@ -29,16 +35,24 @@ interface StatCardProps {
   description: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description }) => (
-  <div className="p-6 rounded-xl border bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700">
-    <div className="flex items-center space-x-4">
-      <Icon className="h-6 w-6 text-blue-500" />
-      <h3 className="text-lg font-semibold">{title}</h3>
-    </div>
-    <p className="text-3xl font-bold mt-4 mb-2">{value}</p>
-    <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
-  </div>
+// Actualizar StatCard para un diseño más moderno
+const StatCard = ({ title, value, icon: Icon, description }: StatCardProps) => (
+  <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+    <CardContent className="pt-6">
+      <div className="flex items-center gap-4">
+        <div className="p-2 rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-6 w-6" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
 );
+
 import {
   Card,
   CardHeader,
@@ -46,8 +60,6 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-
-
 
 // Define la interfaz para los datos del usuario
 interface UserStats {
@@ -60,6 +72,7 @@ interface UserStats {
   avatar?: string;
   ejercicios_resueltos_ultimos_siete_dias ?: number;
   recentSolutions?: { id: number; problem_title: string; language: string; created_at: string; status: string }[];
+  points: number;
 }
 
 const Dash = () => {
@@ -127,35 +140,45 @@ const Dash = () => {
   }
 
   return (
-<div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-  <Header />
-      {/* Main Content */}
-      <div className="p-8">
-        {/* User Profile Header */}
-        <div className="rounded-2xl shadow-xl p-6 mb-8 border bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700">
-          <div className="flex items-center space-x-6">
-            <div className="relative">
-            <img
-                src={userStats.avatar || "https://ibb.co/5Wy9XrP"}
-                alt="Profile"
-                className="w-28 h-28 rounded-full object-cover ring-4 ring-blue-500/20 transition-all hover:ring-blue-500/40"
-              />
-              <span className="absolute bottom-0 right-0 block h-6 w-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs">
-                <Award className="h-4 w-4" />
-              </span>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        {/* Profile Section */}
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="relative">
+                <img
+                  src={userStats?.avatar || "https://ibb.co/5Wy9XrP"}
+                  alt="Profile"
+                  className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20 transition-all group-hover:ring-primary/40"
+                />
+                <span className="absolute bottom-0 right-0 block h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                  <Award className="h-4 w-4" />
+                </span>
+              </div>
+              <div className="space-y-2 text-center md:text-left">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {`${userStats?.name} ${userStats?.last_name}`}
+                </h1>
+                <div className="flex items-center gap-4 text-muted-foreground">
+                  <span className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    Rango Global: #{userStats?.ranking}
+                  </span>
+                  <Separator orientation="vertical" className="h-4" />
+                  <span className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    {userStats?.points || 0} puntos
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold mb-2">{`${userStats.name} ${userStats.last_name}`}</h1>
-              <p className="flex items-center space-x-2">
-                <span>Rango Global:</span>
-                <span className="font-semibold text-blue-600">#{userStats.ranking}</span>
-              </p>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8  ">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Problemas Resueltos"
             value={userStats.ejercicios_completados}
@@ -182,114 +205,103 @@ const Dash = () => {
           />
         </div>
 
-        {/* Progress and Recent Exercises Combined */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Progress Chart */}
-<Card
-  className={`${
-    isDarkMode
-      ? "bg-gray-800 border-gray-700"
-      : "dark:bg-gray-800 border-slate-200 dark:border-gray-700"
-  }`}
->
-  <CardHeader>
-    <CardTitle>Progreso Semanal</CardTitle>
-    <CardDescription>Problemas resueltos por día</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <div className="h-[300px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={progressData}>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={isDarkMode ? "#374151" : "#e5e7eb"}
-          />
-          <XAxis
-            dataKey="day" // Mapeado a `day`
-            stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
-          />
-          <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
-              color: isDarkMode ? "#ffffff" : "#000000",
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="problems" // Mapeado a `problems`
-            stroke="#3b82f6"
-            strokeWidth={2}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  </CardContent>
-</Card>
+        {/* Charts and Recent Activity Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+          {/* Progress Chart Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Progreso Semanal
+              </CardTitle>
+              <CardDescription>
+                Tu actividad de resolución de problemas en los últimos 7 días
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={progressData}>
+                    <defs>
+                      <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="day" className="text-sm text-muted-foreground" />
+                    <YAxis className="text-sm text-muted-foreground" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="problems"
+                      stroke="hsl(var(--primary))"
+                      fillOpacity={1}
+                      fill="url(#progressGradient)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
 
-           {/* Ejercicios Recientes */}
-      <Card
-        className={`${
-          isDarkMode
-            ? "bg-gray-800 border-gray-700"
-            : "dark:bg-gray-800 border-slate-200 dark:border-gray-700"
-        }`}
-      >
-        <CardHeader>
-          <CardTitle>Ejercicios Recientes</CardTitle>
-          <CardDescription>Últimos problemas trabajados</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {userStats.recentSolutions && userStats.recentSolutions.length > 0 ? (
-              userStats.recentSolutions.map((exercise) => (
-                <div
-                  key={exercise.id}
-                  className={`p-4 rounded-lg border ${
-                    isDarkMode ? "border-gray-700" : "border-gray-200"
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="font-medium">{exercise.problem_title}</h3>
-                      <p
-                        className={`text-sm ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        {exercise.language} •{" "}
-                        {new Date(exercise.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        exercise.status === "Accepted"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                      }`}
+          {/* Recent Solutions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Ejercicios Recientes
+              </CardTitle>
+              <CardDescription>
+                Últimas soluciones enviadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-4">
+                  {userStats?.recentSolutions?.map((exercise) => (
+                    <div
+                      key={exercise.id}
+                      className="group flex flex-col gap-2 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
                     >
-                      {exercise.status === "Accepted" ? (
-                        <BsCheckCircle className="mr-1" />
-                      ) : (
-                        <BsXCircle className="mr-1" />
-                      )}
-                      {exercise.status}
-                    </span>
-                  </div>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium leading-none">{exercise.problem_title}</h3>
+                        <Badge variant={exercise.status === "Accepted" ? "default" : "destructive"}>
+                          {exercise.status === "Accepted" ? (
+                            <CheckCircle className="mr-1 h-3 w-3" />
+                          ) : (
+                            <XCircle className="mr-1 h-3 w-3" />
+                          )}
+                          {exercise.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Code className="h-3 w-3" />
+                          {exercise.language}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(exercise.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <p>No hay ejercicios recientes disponibles.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <Footer />
     </div>
-  </div>
-  <Footer/>
-</div>
   );
 };
-
 
 export default Dash;

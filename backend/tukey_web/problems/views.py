@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Problem
 
+
 class ProblemListView(APIView):
     permission_classes = [IsAuthenticated]  # Requiere autenticación
 
@@ -33,7 +34,7 @@ class ProblemDetailView(APIView):
                 {
                     "input": example.input_data,
                     "output": example.output_data,
-                    "explanation": example.explanation
+                    "explanation": example.explanation,
                 }
                 for example in problem.examples.all()
             ]
@@ -44,7 +45,8 @@ class ProblemDetailView(APIView):
                 "difficulty": problem.difficulty,
                 "category": problem.category.name if problem.category else None,
                 "tags": [tag.name for tag in problem.tags.all()],
-                "examples": examples,  # Incluye los ejemplos en la respuesta
+                "examples": examples,
+                "formula": problem.formula,
             }
             return Response(data, status=status.HTTP_200_OK)
         except Problem.DoesNotExist:
