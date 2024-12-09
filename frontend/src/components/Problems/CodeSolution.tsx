@@ -13,8 +13,8 @@ import FormulaComponent from "@/components/ui/FormulaComponent";
 import { Confetti, fireSideConfetti } from "@/components/ui/confetti";
 import WordRotate from "@/components/ui/word-rotate";
 import Cookies from "js-cookie";
-import Header from "./Header";
-import Footer from "./Footer";
+import Header from "@/components/Common/Header";
+import Footer from "@/components/Common/Footer";
 import {
   Carousel,
   CarouselContent,

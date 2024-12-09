@@ -15,4 +15,3 @@ const FormulaComponent: React.FC<FormulaComponentProps> = ({ formula }) => {
 };
 
 export default FormulaComponent;
-

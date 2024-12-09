@@ -1,6 +1,6 @@
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext";
 import { Toaster } from 'sonner';
-import { BsHouseDoor, BsCode, BsPerson } from "react-icons/bs";
+import { BsHouseDoor, BsCode, BsPerson, BsCalendar } from "react-icons/bs";
 import { Sun, Moon, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
@@ -61,23 +61,25 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <Toaster richColors position='top-left' />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+            <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
               CodeMaster Pro
             </span>
           </div>
           
-          <nav className="flex items-center space-x-8">
-            <NavLink href="/" icon={BsHouseDoor}>Home</NavLink>
+          <nav className="flex items-center space-x-6">
+            <NavLink href="/landing" icon={BsHouseDoor}>Home</NavLink>
+            <NavLink href="/events" icon={BsCalendar}>Events</NavLink>
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
             <NavLink href="/dashboard" icon={BsPerson}>Profile</NavLink>
             
             <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={toggleTheme}
-          >
-            {theme === "light" ? <Moon /> : <Sun />}
-          </Button>
+              variant="outline" 
+              size="icon" 
+              onClick={toggleTheme}
+              className="ml-2"
+            >
+              {theme === "light" ? <Moon /> : <Sun />}
+            </Button>
           </nav>
         </div>
       </div>

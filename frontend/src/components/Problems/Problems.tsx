@@ -53,9 +53,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "@/components/ui/toaster"
-import { useToast } from "../hooks/use-toast"
-import Header from "./Header"
-import Footer from "./Footer"
+import { useToast } from "../../hooks/use-toast"
+import Header from "@/components/Common/Header";
+import Footer from "@/components/Common/Footer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import Header from "./Header";
-import Footer from "./Footer";
+import Header from "@/components/Common/Header";
+import Footer from "@/components/Common/Footer";
 import { useTheme } from "../context/ThemeContext";
 import {
   BsCheckCircle,
