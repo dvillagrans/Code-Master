@@ -7,6 +7,7 @@ from .views import (
     UserViewSet,
     CurrentUserView,
     UserRankingView,
+    FirebaseAuthView
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from django.urls import include
@@ -26,6 +27,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('ranking/', UserRankingView.as_view(), name='user-ranking'),
+    path('firebase-auth/', FirebaseAuthView.as_view(), name='firebase-auth'),
 
 ]
 

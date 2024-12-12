@@ -72,8 +72,10 @@ interface UserStats {
   avatar?: string;
   ejercicios_resueltos_ultimos_siete_dias ?: number;
   recentSolutions?: { id: number; problem_title: string; language: string; created_at: string; status: string }[];
-  points: number;
+  puntos_experiencia: number;
 }
+
+const DEFAULT_AVATAR = "https://i.ibb.co/5Wy9XrP/default-avatar.png"; // Reemplaza con tu URL de avatar por defecto
 
 const Dash = () => {
   const { isDarkMode } = useTheme();
@@ -149,9 +151,13 @@ const Dash = () => {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="relative">
                 <img
-                  src={userStats?.avatar || "https://ibb.co/5Wy9XrP"}
+                  src={userStats.avatar || DEFAULT_AVATAR}
                   alt="Profile"
                   className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20 transition-all group-hover:ring-primary/40"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = DEFAULT_AVATAR;
+                  }}
                 />
                 <span className="absolute bottom-0 right-0 block h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
                   <Award className="h-4 w-4" />
@@ -169,7 +175,7 @@ const Dash = () => {
                   <Separator orientation="vertical" className="h-4" />
                   <span className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500" />
-                    {userStats?.points || 0} puntos
+                    {userStats?.puntos_experiencia || 0} puntos
                   </span>
                 </div>
               </div>

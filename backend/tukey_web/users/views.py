@@ -35,19 +35,37 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import CustomUser
+from .firebase import auth  # Asegúrate de tener tu configuración de Firebase
+from rest_framework_simplejwt.tokens import RefreshToken
 
-@csrf_exempt  # Si no usas CSRF en el frontend, añade esta excepción
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
-        if user:
+        token = request.data.get("firebase_token")
+        
+        if not token:
+            return JsonResponse({'error': 'Firebase token is required'}, status=400)
+        
+        try:
+            # Verificar el token de Firebase
+            decoded_token = auth.verify_id_token(token)
+            firebase_uid = decoded_token['uid']
+            email = decoded_token.get('email')
+            username = email.split('@')[0]  # Generar un username si no está definido
+            
+            # Buscar o crear el usuario en Django
+            user, created = CustomUser.objects.get_or_create(
+                firebase_uid=firebase_uid,
+                defaults={
+                    "username": username,
+                    "email": email,
+                }
+            )
+            
+            # Generar tokens JWT
             refresh = RefreshToken.for_user(user)
-
-            # Crear la respuesta
             response = JsonResponse({'message': 'Login successful'})
             
             # Configurar las cookies
@@ -66,9 +84,9 @@ def login_view(request):
                 samesite='Lax'
             )
             return response
-        return JsonResponse({'error': 'Invalid credentials'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': f'Firebase token verification failed: {str(e)}'}, status=400)
     return JsonResponse({'error': 'Invalid method'}, status=405)
-
 
 
 # Vista protegida para el perfil de usuario
@@ -204,7 +222,6 @@ def set_cookie(response, name, value, max_age=None):
         max_age=max_age
     )
 
-
 class UserRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -223,4 +240,76 @@ class UserRankingView(APIView):
             for user in users
         ]
         return Response(ranking)
-    
+
+from rest_framework_simplejwt.tokens import RefreshToken
+
+class FirebaseAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get("token")
+        if not token:
+            return Response({"error": "Token not provided"}, status=400)
+
+        try:
+            # Verificar el ID Token con Firebase Admin
+            decoded_token = auth.verify_id_token(token)
+            firebase_uid = decoded_token["uid"]
+            email = decoded_token.get("email")
+            username = email.split('@')[0] if email else f"user_{firebase_uid}"
+
+            # Buscar al usuario por correo
+            user = CustomUser.objects.filter(email=email).first()
+
+            if user:
+                if not user.firebase_uid:
+                    user.firebase_uid = firebase_uid
+                    user.save()
+                created = False
+            else:
+                user = CustomUser.objects.create(
+                    firebase_uid=firebase_uid,
+                    email=email,
+                    username=username
+                )
+                created = True
+
+            # Generar tokens JWT
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            # Crear la respuesta con los tokens en cookies
+            response = JsonResponse({
+                "status": "success",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
+                "created": created,
+            })
+
+            # Configurar cookies para access_token y refresh_token
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=False,  # Cambiar a True en producción con HTTPS
+                samesite="Lax",
+                max_age=3600  # 1 hora
+            )
+            response.set_cookie(
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                secure=False,  # Cambiar a True en producción con HTTPS
+                samesite="Lax",
+                max_age=7 * 24 * 3600  # 7 días
+            )
+
+            return response
+
+        except ValueError as e:
+            return Response({"error": "Invalid token"}, status=400)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

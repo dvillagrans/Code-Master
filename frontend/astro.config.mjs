@@ -10,14 +10,15 @@ export default defineConfig({
     }),
     react(),
   ],
-  output: 'hybrid',
-  adapter: vercel(),
+  output: 'server', // Cambiar 'hybrid' a 'server' o 'static'
+  adapter: vercel(), // Usa el adaptador adecuado para el despliegue
   vite: {
     optimizeDeps: {
       include: ['@monaco-editor/react', 'monaco-editor'],
     },
   },
   experimental: {
-    viewTransitions: true
-  }
+    // Verifica si 'viewTransitions' sigue siendo válido en tu versión
+    // Si no es compatible, elimina esta sección
+  },
 });
