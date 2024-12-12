@@ -67,7 +67,7 @@ const Header = () => {
           </div>
           
           <nav className="flex items-center space-x-6">
-            <NavLink href="/landing" icon={BsHouseDoor}>Home</NavLink>
+            <NavLink href="/" icon={BsHouseDoor}>Home</NavLink>
             <NavLink href="/events" icon={BsCalendar}>Events</NavLink>
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
             <NavLink href="/dashboard" icon={BsPerson}>Profile</NavLink>

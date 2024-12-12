@@ -100,3 +100,5 @@ config/settings_local.py
 config/settings/production.py
 config/settings/*.pyc
 
+
+/backend/tukey_web/config/firebase/

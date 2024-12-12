@@ -3,7 +3,8 @@ from django.db import models
 from django.db.models import Count, Q
 from django.utils.timezone import now
 from datetime import timedelta
-
+import json
+from datetime import datetime
 
 def user_avatar_upload_path(instance, filename):
     """
@@ -19,6 +20,8 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+
+    firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
 
     # Información básica
     name = models.CharField(max_length=50, default="")
@@ -42,7 +45,7 @@ class CustomUser(AbstractUser):
     last_exercise_date = models.DateField(null=True, blank=True)  # Último ejercicio resuelto
     racha = models.IntegerField(default=0)  # Días consecutivos resolviendo problemas
     tiempo_total = models.IntegerField(default=0)  # Tiempo total en segundos
-    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=list)  # Historial de los últimos 7 días
+    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=dict)  # Historial de los últimos 7 días
     nivel = models.CharField(max_length=20, default="Básico")  # Nivel del usuario
     puntos_experiencia = models.IntegerField(default=0)  # Puntos acumulados
     ranking = models.IntegerField(default=0)  # Ranking global del usuario
@@ -72,52 +75,68 @@ class CustomUser(AbstractUser):
         if fecha is None:
             fecha = now().date()
 
+        # Validar que el tiempo sea positivo
+        if tiempo_ejercicio < 0:
+            tiempo_ejercicio = 0
+
         self.tiempo_total += tiempo_ejercicio
 
-        # Busca el registro del día en el historial
-        ejercicio_dia = next((registro for registro in self.ejercicios_resueltos_ultimos_siete_dias if registro['date'] == fecha.isoformat()), None)
+        # Convertir a lista si es None
+        if self.ejercicios_resueltos_ultimos_siete_dias is None:
+            self.ejercicios_resueltos_ultimos_siete_dias = []
+
+        # Eliminar registros más antiguos de 7 días
+        fecha_limite = fecha - timedelta(days=7)
+        self.ejercicios_resueltos_ultimos_siete_dias = [
+            registro for registro in self.ejercicios_resueltos_ultimos_siete_dias 
+            if datetime.fromisoformat(registro['date']).date() > fecha_limite
+        ]
+
+        # Actualizar o crear registro
+        ejercicio_dia = next(
+            (registro for registro in self.ejercicios_resueltos_ultimos_siete_dias 
+             if registro['date'] == fecha.isoformat()), 
+            None
+        )
 
         if ejercicio_dia:
-            # Incrementa el contador si ya existe un registro para ese día
             ejercicio_dia['count'] += 1
         else:
-            # Agrega un nuevo registro si no existe
-            self.ejercicios_resueltos_ultimos_siete_dias.append({"date": fecha.isoformat(), "count": 1})
-
-        # Mantiene solo los últimos 7 días
-        self.ejercicios_resueltos_ultimos_siete_dias = self.ejercicios_resueltos_ultimos_siete_dias[-7:]
+            self.ejercicios_resueltos_ultimos_siete_dias.append({
+                "date": fecha.isoformat(), 
+                "count": 1
+            })
 
         self.last_exercise_date = fecha
         self.save()
 
-        self.calcular_racha()
-
     def actualizar_racha(self):
         """
         Actualiza la racha diaria del usuario.
-        Si se completa un ejercicio hoy y fue consecutivo al día anterior, aumenta la racha.
-        Si no fue consecutivo, la racha se reinicia.
+        - Si se completa un ejercicio hoy y fue consecutivo al día anterior o del mismo día, mantiene/aumenta la racha.
+        - Si no fue consecutivo, la racha se reinicia.
         """
         today = now().date()
 
         if self.last_exercise_date:
-            # Si ya hay una fecha previa, verificar si es consecutiva
-            if self.last_exercise_date == today - timedelta(days=1):
-                self.racha += 1  # Día consecutivo, aumentar la racha
-            elif self.last_exercise_date < today - timedelta(days=1):
-                self.racha = 1  # No consecutivo, reiniciar la racha
+            dias_diferencia = (today - self.last_exercise_date).days
+            
+            if dias_diferencia == 0:  # Mismo día
+                pass  # Mantener la racha actual
+            elif dias_diferencia == 1:  # Día consecutivo
+                self.racha += 1
+            else:  # Más de un día de diferencia
+                self.racha = 1
         else:
-            # Si no hay una fecha previa, iniciar la racha
+            # Primera vez que resuelve un ejercicio
             self.racha = 1
 
-        # Actualizar la última fecha de ejercicio
         self.last_exercise_date = today
         self.save()
     
     def otorgar_experiencia(self, dificultad, execution_time=None, peak_memory=None):
         """
-        Otorga puntos de experiencia al usuario basados en la dificultad del ejercicio,
-        tiempo de ejecución y memoria usada.
+        Otorga puntos de experiencia al usuario y actualiza su nivel.
         """
         experiencia_por_dificultad = {
             'Easy': 10,
@@ -128,12 +147,14 @@ class CustomUser(AbstractUser):
         puntos = experiencia_por_dificultad.get(dificultad, 0)
     
         # Bonus por tiempo rápido y bajo uso de memoria
-        if execution_time and execution_time < 1.0:  # Menos de 1 segundo
+        if execution_time and execution_time < 1.0:
             puntos += 5
-        if peak_memory and peak_memory < 10.0:  # Menos de 10 MB
+        if peak_memory and peak_memory < 10.0:
             puntos += 5
     
         self.puntos_experiencia += puntos
+        # Actualizar el nivel después de añadir puntos
+        self.nivel = self._calcular_nivel()
         self.save()
     
         return puntos
@@ -141,13 +162,29 @@ class CustomUser(AbstractUser):
     def _calcular_nivel(self):
         """
         Calcula el nivel del usuario basado en los puntos de experiencia.
+        Los rangos son:
+        - Básico: 0-99 puntos
+        - Intermedio: 100-499 puntos
+        - Avanzado: 500-999 puntos
+        - Experto: 1000-1999 puntos
+        - Maestro: 2000+ puntos
         """
         if self.puntos_experiencia < 100:
             return "Básico"
         elif self.puntos_experiencia < 500:
             return "Intermedio"
-        else:
+        elif self.puntos_experiencia < 1000:
             return "Avanzado"
-        
-        
-        
+        elif self.puntos_experiencia < 2000:
+            return "Experto"
+        else:
+            return "Maestro"
+
+    def actualizar_ranking(self):
+        """
+        Actualiza el ranking del usuario basado en sus puntos de experiencia.
+        """
+        self.ranking = CustomUser.objects.filter(
+            puntos_experiencia__gt=self.puntos_experiencia
+        ).count() + 1
+        self.save()

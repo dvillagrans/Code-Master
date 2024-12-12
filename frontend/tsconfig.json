@@ -1,15 +1,16 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./src/*"
+        "src/*"
       ]
     },
-    "jsx": "react-jsx",
     "jsxImportSource": "react",
     "esModuleInterop": true, // Habilita el soporte para módulos CommonJS
-    "allowSyntheticDefaultImports": true // Permite importar módulos sin exportación default explícita
+    "allowSyntheticDefaultImports": true, // Permite importar módulos sin exportación default explícita
+    "skipLibCheck": true
   }
 }

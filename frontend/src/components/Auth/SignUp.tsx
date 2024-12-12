@@ -1,46 +1,70 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useForm } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Line } from 'recharts';
 import { Eye, EyeOff, Sparkles } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import Cookies from 'js-cookie';
+
+interface AuthResponse {
+  access: string;
+  refresh: string;
+  user: {
+    username: string;
+    email: string;
+  };
+}
+
+type FormData = {
+  name: string;
+  lastName: string;
+  email: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  terms: boolean;
+};
 
 const SignUp = () => {
+  const form = useForm<FormData>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    lastName: '',
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
-    terms: false,
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
-  
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-  
-    // Validaciones básicas
-    if (!formData.terms) {
+  const handleFormSubmit = async (data: FormData) => {
+    if (isSubmitting) return;
+    
+    if (!data.terms) {
       toast.error("Please agree to the Terms of Service and Privacy Policy");
       return;
     }
   
-    if (formData.password !== formData.confirmPassword) {
+    if (data.password !== data.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
-  
+
+    setIsSubmitting(true);
+    
     try {
       const response = await fetch("http://127.0.0.1:8000/users/register/", {
         method: "POST",
@@ -49,19 +73,42 @@ const SignUp = () => {
         },
         credentials: "include", // Permite enviar/recibir cookies
         body: JSON.stringify({
-          name: formData.name,
-          last_name: formData.lastName,
-          email: formData.email,
-          username: formData.username,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-          terms: formData.terms,
+          name: data.name,
+          last_name: data.lastName,
+          email: data.email,
+          username: data.username,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+          terms: data.terms,
         }),
       });
   
-      const responseData = await response.json();
+      const responseData: AuthResponse = await response.json();
   
       if (response.ok) {
+        // Guardar tokens en cookies con nombres consistentes
+        Cookies.set('access_token', responseData.access, { 
+          expires: 1, // 1 día
+          secure: true,
+          sameSite: 'Lax'
+        });
+        
+        Cookies.set('refresh_token', responseData.refresh, { 
+          expires: 7, // 7 días
+          secure: true,
+          sameSite: 'Lax'
+        });
+        
+        // Guardar información del usuario
+        Cookies.set('user_data', JSON.stringify({
+          username: responseData.user.username,
+          email: responseData.user.email
+        }), {
+          expires: 1,
+          secure: true,
+          sameSite: 'Lax'
+        });
+
         toast.success("Account created successfully!", {
           description: "Redirecting to dashboard...",
         });
@@ -72,15 +119,7 @@ const SignUp = () => {
         }, 1500);
   
         // Restablecer el formulario
-        setFormData({
-          name: "",
-          lastName: "",
-          email: "",
-          username: "",
-          password: "",
-          confirmPassword: "",
-          terms: false,
-        });
+        form.reset();
       } else {
         // Manejo de errores del backend
         const errorMessages = Object.entries(responseData)
@@ -95,11 +134,10 @@ const SignUp = () => {
       toast.error("Could not create account", {
         description: "Please try again later",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-    
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Sample data for the chart - showing user growth metrics
   const chartData = [
@@ -116,159 +154,192 @@ const SignUp = () => {
   ];
 
   return (
-    <div className="min-h-screen w-full flex">
-      {/* Sign Up Section */}
+    <div className="min-h-screen w-full flex bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="w-full lg:w-5/12 p-8 lg:p-12 flex items-center justify-center">
-        <div className="w-full max-w-md space-y-8">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
-              <Toaster richColors position='top-left' />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              CodeMaster Pro
-            </span>
-          </div>
-
-          {/* Sign Up Form */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+            <CardHeader className="space-y-1">
+              {/* Logo section */}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-white" />
+                  <Toaster richColors position='top-left' />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  CodeMaster Pro
+                </span>
+              </div>
+              <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+              <CardDescription>
                 Join our community of developers and start your journey
-              </p>
-            </div>
+              </CardDescription>
+            </CardHeader>
 
-            <div className="space-y-4">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                <Input
-                  name="name"
-                  type="text"
-                  placeholder="First Name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                />
-                </div>
-                <div>
-                <Input
-                  name="lastName"
-                  type="text"
-                  placeholder="Last Name"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                />
-                </div>
-              </div>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="First Name" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Last Name" />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              {/* username */}
-              <div>
-              <Input
-                name="username"
-                type="text"
-                placeholder="Enter your username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-                />
-              </div>
+                  {/* Username field */}
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Choose a username" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
+                  {/* Email field */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="email" placeholder="Enter your email" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Email */}
-              <div>
-              <Input
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0"
-              />
-              </div>
+                  {/* Password fields */}
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create password"
+                            className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
+                          />
+                        </FormControl>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Password */}
-              <div className="relative">
-              <Input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-              />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm password"
+                            className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
+                          />
+                        </FormControl>
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Confirm Password */}
-              <div className="relative">
-              <Input
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-              />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
+                  {/* Terms checkbox */}
+                  <FormField
+                    control={form.control}
+                    name="terms"
+                    render={({ field }) => (
+                      <FormItem className="flex items-start space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            I agree to the{' '}
+                            <Button variant="link" className="p-0 h-auto">Terms of Service</Button>
+                            {' '}and{' '}
+                            <Button variant="link" className="p-0 h-auto">Privacy Policy</Button>
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Terms and Conditions */}
-              <div className="flex items-start space-x-2">
-              <Checkbox
-                name="agreeTerms"
-                id="terms"
-                checked={formData.terms}
-                onCheckedChange={(checked) => handleInputChange({ target: { name: 'terms', value: checked, type: 'checkbox', checked } } as unknown as React.ChangeEvent<HTMLInputElement>)}
-              />
-                <label
-                  htmlFor="terms"
-                  className="text-sm text-gray-500 dark:text-gray-400"
-                >
-                  I agree to the{' '}
-                  <Button variant="link" className="p-0 h-auto text-blue-500 hover:text-blue-600">
-                    Terms of Service
-                  </Button>{' '}
-                  and{' '}
-                  <Button variant="link" className="p-0 h-auto text-blue-500 hover:text-blue-600">
-                    Privacy Policy
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating account...
+                      </div>
+                    ) : (
+                      'Create Account'
+                    )}
                   </Button>
-                </label>
-              </div>
+                </form>
+              </Form>
+            </CardContent>
 
-              <form onSubmit={handleFormSubmit}>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                >
-                  Create Account
-                </Button>
-              </form>
-
-
+            <CardFooter className="flex flex-col space-y-4">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
@@ -312,20 +383,20 @@ const SignUp = () => {
                   Apple
                 </Button>
               </div>
-            </div>
 
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-              Already have an account?{' '}
-              <Button
-                variant="link"
-                className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                onClick={() => window.location.href = '/'}
-              >
-                Sign in
-              </Button>
-            </p>
-          </div>
-        </div>
+              <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+                Already have an account?{' '}
+                <Button
+                  variant="link"
+                  className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                  onClick={() => window.location.href = '/register' }
+                >
+                  Sign in
+                </Button>
+              </p>
+            </CardFooter>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Preview Section */}

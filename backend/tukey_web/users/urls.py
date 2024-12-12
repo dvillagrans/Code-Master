@@ -6,7 +6,7 @@ from .views import (
     RegisterView,
     UserViewSet,
     CurrentUserView,
-    UserRankingView
+    UserRankingView,
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from django.urls import include

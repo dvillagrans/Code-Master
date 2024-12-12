@@ -23,3 +23,37 @@ export const fetchUserProfile = async () => {
         }
     }
 };
+
+
+// src/services/authService.ts
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase/firebaseConfig';
+import axios from 'axios';
+
+export const loginWithGoogle = async () => {
+    try {
+        // Inicia sesión con Google
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // Obtiene el token de ID de Firebase
+        const idToken = await user.getIdToken();
+
+        // Envía el token al backend de Django
+        const response = await axios.post('http://127.0.0.1:8000/users/third-party-login/', {
+            token: idToken
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Maneja la respuesta del backend
+        console.log('Respuesta del backend:', response.data);
+        return response.data;
+
+    } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        throw error;
+    }
+};

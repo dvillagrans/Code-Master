@@ -10,11 +10,14 @@ export default defineConfig({
     }),
     react(),
   ],
-  output: 'server',
+  output: 'hybrid',
   adapter: vercel(),
   vite: {
     optimizeDeps: {
       include: ['@monaco-editor/react', 'monaco-editor'],
     },
   },
+  experimental: {
+    viewTransitions: true
+  }
 });

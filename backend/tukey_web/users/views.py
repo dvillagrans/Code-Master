@@ -223,3 +223,4 @@ class UserRankingView(APIView):
             for user in users
         ]
         return Response(ranking)
+    
