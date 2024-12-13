@@ -19,6 +19,8 @@ class ProblemListView(APIView):
                 "category": problem.category.name if problem.category else None,
                 "tags": [tag.name for tag in problem.tags.all()],
                 "completed": problem.is_completed_by_user(request.user),
+                "points": problem.points,
+                "timeLimit": problem.time,
             }
             for problem in problems
         ]

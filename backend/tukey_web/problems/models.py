@@ -18,7 +18,8 @@ class Problem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     formula = models.TextField(blank=True, null=True)
-
+    points = models.IntegerField(default=10)
+    time = models.IntegerField(default=15)
     class Meta:
         ordering = ['-created_at']
 
@@ -40,6 +41,28 @@ class Problem(models.Model):
 
     def __str__(self):
         return self.title
+    
+    # Definir los puntos en funcion de la dificultad
+    def get_points(self):
+        if self.difficulty == 'Easy':
+            return 10
+        elif self.difficulty == 'Medium':
+            return 20
+        elif self.difficulty == 'Hard':
+            return 30
+        else:
+            return 0
+        
+    # Definir el tiempo en funcion de la dificultad
+    def get_time(self):
+        if self.difficulty == 'Easy':
+            return 15
+        elif self.difficulty == 'Medium':
+            return 30
+        elif self.difficulty == 'Hard':
+            return 60
+        else:
+            return 0
 
 
 class Example(models.Model):

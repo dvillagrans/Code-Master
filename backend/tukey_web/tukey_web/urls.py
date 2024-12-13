@@ -24,3 +24,4 @@ urlpatterns = [
     path('problems/', include('problems.urls')),
     path('tags/', include('tags.urls')),
 ]
+

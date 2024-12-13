@@ -33,8 +33,7 @@ SECRET_KEY = 'django-insecure-n$sd_tqujyzjd-ywq8jxvqpv%a9#_l7tk#y858v(z)s*dy%7w)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['code-master.fly.dev', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -137,6 +136,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'tukey_web.urls'

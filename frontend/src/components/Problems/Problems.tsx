@@ -61,6 +61,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils" // Asegúrate de agregar esta importación
 
 const ProblemsList = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
@@ -71,6 +73,13 @@ const ProblemsList = () => {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const [completionFilter, setCompletionFilter] = useState("all")
+  const [topUsers, setTopUsers] = useState<{username: string, points: number}[]>([])
+  const [progressStats, setProgressStats] = useState({
+    total: { completed: 0, total: 0 },
+    easy: { completed: 0, total: 0 },
+    medium: { completed: 0, total: 0 },
+    hard: { completed: 0, total: 0 }
+  });
 
   interface Problem {
     id: number
@@ -81,6 +90,7 @@ const ProblemsList = () => {
     completed: boolean
     timeLimit: string
     points: number
+
   }
    // Enhanced categories with icons
    const categoriesWithIcons = [
@@ -172,8 +182,57 @@ const ProblemsList = () => {
       }
     }
 
+    const fetchTopUsers = async () => {
+      const accessToken = Cookies.get("access_token")
+      try {
+        const response = await fetch("http://127.0.0.1:8000/users/ranking/", {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setTopUsers(data.users)
+        }
+      } catch (error) {
+        console.error("Error fetching ranking:", error)
+      }
+    }
+
     fetchProblems()
+    fetchTopUsers()
   }, [])
+
+  useEffect(() => {
+    const calculateProgress = () => {
+      const stats = {
+        total: { completed: 0, total: 0 },
+        easy: { completed: 0, total: 0 },
+        medium: { completed: 0, total: 0 },
+        hard: { completed: 0, total: 0 }
+      };
+
+      problems.forEach(problem => {
+        const difficulty = problem.difficulty.toLowerCase() as 'easy' | 'medium' | 'hard';
+        if (stats[difficulty]) {
+          stats[difficulty].total++;
+          if (problem.completed) stats[difficulty].completed++;
+          stats.total.total++;
+          if (problem.completed) stats.total.completed++;
+        }
+      });
+
+      setProgressStats(stats);
+    };
+
+    if (problems.length > 0) {
+      calculateProgress();
+    }
+  }, [problems]);
 
   const filteredProblems = problems.filter((problem) => {
     const matchesSearch =
@@ -227,7 +286,7 @@ const ProblemsList = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-8">
           {/* Filters Panel */}
           <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
             <ScrollArea className="h-full">
@@ -282,7 +341,7 @@ const ProblemsList = () => {
                   >
                     {completionStates.map((state) => (
                       <div key={state.value} 
-                           className="flex items-center space-x-2 rounded-lg hover:bg-accent p-2 transition-colors">
+                          className="flex items-center space-x-2 rounded-lg hover:bg-accent p-2 transition-colors">
                         <RadioGroupItem value={state.value} id={state.value} />
                         <Label htmlFor={state.value} className="flex items-center flex-1 cursor-pointer">
                           <state.icon className="mr-2 h-4 w-4 text-primary" />
@@ -338,6 +397,7 @@ const ProblemsList = () => {
                   <Card 
                     key={problem.id} 
                     className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                    onClick={() => window.location.href = `/problem/${problem.id}`}
                   >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xl flex items-center">
@@ -361,7 +421,7 @@ const ProblemsList = () => {
                       <div className="flex gap-4">
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="text-purple-500 size-4" />
-                          <span>{problem.timeLimit}</span>
+                          <span>{problem.timeLimit} min</span>
                         </div>
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Trophy className="text-yellow-500 size-4" />
@@ -388,6 +448,134 @@ const ProblemsList = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Ranking Panel */}
+        <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+          <ScrollArea className="h-full">
+            <div className="space-y-6 p-4 bg-card rounded-xl border shadow-sm">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg flex items-center">
+                  <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
+                  Top 10 Users
+                </h3>
+                <Separator />
+                <div className="space-y-4">
+                  {topUsers.slice(0, 10).map((user, index) => (
+                    <div
+                      key={user.username}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-accent transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold ${
+                          index === 0 ? "text-yellow-500" :
+                          index === 1 ? "text-gray-400" :
+                          index === 2 ? "text-amber-600" :
+                          "text-muted-foreground"
+                        }`}>
+                          #{index + 1}
+                        </span>
+                        <span>{user.username}</span>
+                      </div>
+                      <Badge variant="secondary" className="ml-2">
+                        {user.points} pts
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6">
+                <h3 className="font-semibold text-lg flex items-center mb-4">
+                  <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
+                  Progress Tracker
+                </h3>
+                <Separator className="mb-4" />
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center mb-6">
+                    <div className="relative w-32 h-32">
+                      <svg className="w-full h-full" viewBox="0 0 100 100">
+                        {/* Círculo de fondo */}
+                        <circle
+                          className="text-muted stroke-current"
+                          strokeWidth="10"
+                          stroke="currentColor"
+                          fill="transparent"
+                          r="40"
+                          cx="50"
+                          cy="50"
+                        />
+                        {/* Círculo de progreso */}
+                        <circle
+                          className="text-primary stroke-current"
+                          strokeWidth="10"
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="transparent"
+                          r="40"
+                          cx="50"
+                          cy="50"
+                          style={{
+                            strokeDasharray: `${2 * Math.PI * 40}`,
+                            strokeDashoffset: `${2 * Math.PI * 40 * (1 - progressStats.total.completed / progressStats.total.total)}`,
+                            transform: 'rotate(-90deg)',
+                            transformOrigin: '50% 50%'
+                          }}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <span className="text-2xl font-bold">
+                            {Math.round((progressStats.total.completed / progressStats.total.total) * 100)}%
+                          </span>
+                          <p className="text-xs text-muted-foreground">Completado</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Easy</span>
+                      <span className="font-medium text-green-500">
+                        {progressStats.easy.completed}/{progressStats.easy.total}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(progressStats.easy.completed / progressStats.easy.total) * 100 || 0} 
+                      className="h-2 bg-green-100" 
+                    />
+                  </div>
+          
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Medium</span>
+                      <span className="font-medium text-yellow-500">
+                        {progressStats.medium.completed}/{progressStats.medium.total}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(progressStats.medium.completed / progressStats.medium.total) * 100 || 0} 
+                      className="h-2 bg-yellow-100" 
+                    />
+                  </div>
+          
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Hard</span>
+                      <span className="font-medium text-red-500">
+                        {progressStats.hard.completed}/{progressStats.hard.total}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(progressStats.hard.completed / progressStats.hard.total) * 100 || 0} 
+                      className="h-2 bg-red-100 bg-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>

@@ -7,7 +7,8 @@ from .views import (
     UserViewSet,
     CurrentUserView,
     UserRankingView,
-    FirebaseAuthView
+    FirebaseAuthView,
+    
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from django.urls import include
@@ -28,7 +29,6 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('ranking/', UserRankingView.as_view(), name='user-ranking'),
     path('firebase-auth/', FirebaseAuthView.as_view(), name='firebase-auth'),
-
 ]
 
 # Agregar rutas del router

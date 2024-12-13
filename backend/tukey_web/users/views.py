@@ -209,6 +209,7 @@ def dashboard(request):
         'promedio_racha': promedio_racha,
         'distribucion_niveles': distribucion_niveles,
         'distribucion_experiencia': distribucion_experiencia,
+        'ranking': CustomUser.objects.order_by('-puntos_experiencia')[:10]  # Cambiado de ranking_score a puntos_experiencia
     }
     return render(request, 'dashboard.html', context)
 
@@ -226,22 +227,18 @@ class UserRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        users = CustomUser.objects.all().order_by('-ranking_score')
+        users = CustomUser.objects.all().order_by('-puntos_experiencia')  # Ordenar por puntos_experiencia en orden descendente
         ranking = [
             {
                 "username": user.username,
-                "name": user.name,
-                "ranking_score": user.ranking,
+                "points": user.puntos_experiencia,
                 "nivel": user.nivel,
-                "racha": user.racha,
                 "ejercicios_completados": user.ejercicios_completados,
                 "avatar": user.avatar.url if user.avatar else None,
             }
-            for user in users
+            for user in users[:10]
         ]
-        return Response(ranking)
-
-from rest_framework_simplejwt.tokens import RefreshToken
+        return Response({"users": ranking})
 
 class FirebaseAuthView(APIView):
     permission_classes = [AllowAny]

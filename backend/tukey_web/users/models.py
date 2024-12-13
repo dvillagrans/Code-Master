@@ -45,7 +45,7 @@ class CustomUser(AbstractUser):
     last_exercise_date = models.DateField(null=True, blank=True)  # Último ejercicio resuelto
     racha = models.IntegerField(default=0)  # Días consecutivos resolviendo problemas
     tiempo_total = models.IntegerField(default=0)  # Tiempo total en segundos
-    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=dict)  # Historial de los últimos 7 días
+    ejercicios_resueltos_ultimos_siete_dias = models.JSONField(default=dict)  # Cambiar default=list a default=dict
     nivel = models.CharField(max_length=20, default="Básico")  # Nivel del usuario
     puntos_experiencia = models.IntegerField(default=0)  # Puntos acumulados
     ranking = models.IntegerField(default=0)  # Ranking global del usuario
@@ -69,44 +69,55 @@ class CustomUser(AbstractUser):
             round((stats['soluciones_aceptadas'] / stats['total_intentos']) * 100, 2)
             if stats['total_intentos'] > 0 else 0.0
         )
+        
+        # Actualizar nivel y ranking
+        self.nivel = self._calcular_nivel()
+        self.actualizar_ranking()
+        
+        # Actualizar racha diaria
+        self.actualizar_racha()
+        
+        # Registrar ejercicio resuelto con la fecha actual
+        fecha_actual = now().date()
+        self.registrar_ejercicio_resuelto(fecha=fecha_actual)
+        
         self.save()
 
     def registrar_ejercicio_resuelto(self, fecha=None, tiempo_ejercicio=0):
         if fecha is None:
             fecha = now().date()
 
-        # Validar que el tiempo sea positivo
-        if tiempo_ejercicio < 0:
-            tiempo_ejercicio = 0
+        # Asegurar que tenemos un diccionario válido
+        if not isinstance(self.ejercicios_resueltos_ultimos_siete_dias, dict):
+            self.ejercicios_resueltos_ultimos_siete_dias = {}
 
+        # Validar tiempo
+        tiempo_ejercicio = max(0, tiempo_ejercicio)
         self.tiempo_total += tiempo_ejercicio
 
-        # Convertir a lista si es None
-        if self.ejercicios_resueltos_ultimos_siete_dias is None:
-            self.ejercicios_resueltos_ultimos_siete_dias = []
-
-        # Eliminar registros más antiguos de 7 días
+        # Convertir fecha a string en formato ISO
+        fecha_str = fecha.isoformat()
+        
+        # Limpiar registros antiguos
         fecha_limite = fecha - timedelta(days=7)
-        self.ejercicios_resueltos_ultimos_siete_dias = [
-            registro for registro in self.ejercicios_resueltos_ultimos_siete_dias 
-            if datetime.fromisoformat(registro['date']).date() > fecha_limite
-        ]
+        ejercicios_actualizados = {}
+        
+        # Filtrar y mantener solo los últimos 7 días
+        for fecha_registro, conteo in self.ejercicios_resueltos_ultimos_siete_dias.items():
+            try:
+                fecha_registro_date = datetime.fromisoformat(fecha_registro).date()
+                if fecha_registro_date > fecha_limite:
+                    ejercicios_actualizados[fecha_registro] = conteo
+            except ValueError:
+                continue  # Ignorar fechas inválidas
 
-        # Actualizar o crear registro
-        ejercicio_dia = next(
-            (registro for registro in self.ejercicios_resueltos_ultimos_siete_dias 
-             if registro['date'] == fecha.isoformat()), 
-            None
-        )
-
-        if ejercicio_dia:
-            ejercicio_dia['count'] += 1
+        # Actualizar el registro del día actual
+        if fecha_str in ejercicios_actualizados:
+            ejercicios_actualizados[fecha_str] += 1
         else:
-            self.ejercicios_resueltos_ultimos_siete_dias.append({
-                "date": fecha.isoformat(), 
-                "count": 1
-            })
+            ejercicios_actualizados[fecha_str] = 1
 
+        self.ejercicios_resueltos_ultimos_siete_dias = ejercicios_actualizados
         self.last_exercise_date = fecha
         self.save()
 
@@ -188,3 +199,22 @@ class CustomUser(AbstractUser):
             puntos_experiencia__gt=self.puntos_experiencia
         ).count() + 1
         self.save()
+
+    def get_ejercicios_ultimos_dias(self):
+        """
+        Retorna los ejercicios de los últimos 7 días en formato lista para la gráfica
+        """
+        today = now().date()
+        resultado = []
+        
+        # Crear diccionario con los últimos 7 días
+        for i in range(7):
+            fecha = today - timedelta(days=i)
+            fecha_str = fecha.isoformat()
+            resultado.append({
+                "date": fecha_str,
+                "count": self.ejercicios_resueltos_ultimos_siete_dias.get(fecha_str, 0)
+            })
+            
+        
+        return sorted(resultado, key=lambda x: x['date'])

@@ -85,7 +85,7 @@ const Dash = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const accessToken = Cookies.get("access_token"); // Recuperar el token de las cookies
+      const accessToken = Cookies.get("access_token");
       if (!accessToken) {
         console.error("No se encontró el token de acceso.");
         setLoading(false);
@@ -96,22 +96,27 @@ const Dash = () => {
         const response = await fetch("http://127.0.0.1:8000/users/profile/", {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${accessToken}`, // Agregar el token al encabezado
+            Authorization: `Bearer ${accessToken}`,
           },
         });
 
         if (response.ok) {
           const data = await response.json();
           setUserStats(data);
-  
+          
           // Transformar los datos para la gráfica
-          const transformedProgressData = data.ejercicios_resueltos_ultimos_siete_dias.map(
-            (item: { date: string; count: number }) => ({
-              day: item.date, // Renombrar `date` a `day`
-              problems: item.count, // Renombrar `count` a `problems`
-            })
-          );
-          setProgressData(transformedProgressData);
+          if (Array.isArray(data.ejercicios_resueltos_ultimos_siete_dias)) {
+            const transformedProgressData = data.ejercicios_resueltos_ultimos_siete_dias.map(
+              (item: { date: string; count: number }) => ({
+                day: new Date(item.date).toLocaleDateString('es-ES', { weekday: 'short' }),
+                problems: item.count
+              })
+            );
+            setProgressData(transformedProgressData);
+          } else {
+            console.error("Los datos de ejercicios no tienen el formato esperado");
+            setProgressData([]);
+          }
         } else {
           console.error("Error al obtener los datos del usuario.");
         }
@@ -121,7 +126,7 @@ const Dash = () => {
         setLoading(false);
       }
     };
-  
+
     fetchUserData();
   }, []);
 
