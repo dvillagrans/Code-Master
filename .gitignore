@@ -9,10 +9,6 @@ __pycache__/
 *.env
 *.venv
 
-*.astro
-node_modules
-.vercel
-dist
 # Node.js / Astro (Frontend)
 node_modules/
 .dist/
@@ -99,6 +95,5 @@ settings_local.py
 config/settings_local.py
 config/settings/production.py
 config/settings/*.pyc
-
 
 /backend/tukey_web/config/firebase/

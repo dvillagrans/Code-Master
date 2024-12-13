@@ -1,0 +1,15 @@
+---
+// src/pages/problems/[id].astro
+import "@/styles/globals.css";
+import ProblemShowcase from "../../components/Problems/CodeSolution";
+const { id = "" } = Astro.params ?? {}; // Usa Astro.params en lugar de Astro.
+---
+
+<html lang="en">
+  <head>
+    <title>Problem Details</title>
+  </head>
+  <body>
+    <ProblemShowcase id={id} client:only="react" />
+  </body>
+</html>
