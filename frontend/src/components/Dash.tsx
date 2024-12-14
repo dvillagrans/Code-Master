@@ -27,6 +27,7 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface StatCardProps {
   title: string;
@@ -132,8 +133,78 @@ const Dash = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Cargando...
+      <div className="min-h-screen bg-background">
+        {/* Header Skeleton */}
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <Skeleton className="h-12 w-1/3" /> {/* Placeholder del header */}
+          <Separator />
+  
+          {/* Profile Section Skeleton */}
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <Skeleton className="h-28 w-28 rounded-full" />
+                <div className="space-y-2 text-center md:text-left">
+                  <Skeleton className="h-6 w-1/2" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Separator orientation="vertical" className="h-4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+  
+          {/* Stats Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[1, 2, 3, 4].map((_, index) => (
+              <Card key={index} className="group hover:shadow-lg transition-all">
+                <CardContent className="pt-6 space-y-4">
+                  <Skeleton className="h-6 w-1/3" />
+                  <Skeleton className="h-10 w-1/2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+  
+          {/* Charts and Recent Activity Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+            {/* Progress Chart Card Skeleton */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-1/4" />
+                <Skeleton className="h-4 w-1/3 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[350px] w-full" />
+              </CardContent>
+            </Card>
+  
+            {/* Recent Solutions Card Skeleton */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((_, index) => (
+                    <div
+                      key={index}
+                      className="group flex flex-col gap-2 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                    >
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

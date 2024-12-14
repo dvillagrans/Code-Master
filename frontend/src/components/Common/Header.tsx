@@ -1,9 +1,19 @@
 import { useTheme } from "../../context/ThemeContext";
 import { Toaster } from 'sonner';
-import { BsHouseDoor, BsCode, BsPerson, BsCalendar } from "react-icons/bs";
-import { Sun, Moon, Sparkles, LogOut } from "lucide-react";
+import { BsHouseDoor, BsCode, BsCalendar, BsPerson } from "react-icons/bs";
+import { Sun, Moon, Sparkles, LogOut, User, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 
@@ -11,6 +21,14 @@ interface NavLinkProps {
   href: string;
   icon: React.ElementType;
   children: React.ReactNode;
+}
+
+// Agregar esta interfaz para los datos del usuario
+interface UserData {
+  name: string;
+  last_name: string;
+  email?: string;
+  avatar?: string;
 }
 
 const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
@@ -41,6 +59,92 @@ const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
       <Icon className="text-lg" />
       <span className="font-medium">{children}</span>
     </a>
+  );
+};
+
+const UserMenu = () => {
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const accessToken = Cookies.get("access_token");
+      if (!accessToken) return;
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/users/profile/", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      Cookies.remove('user_data');
+      toast.success('Sesión cerrada correctamente');
+      window.location.href = '/';
+    } catch (error) {
+      toast.error('Error al cerrar sesión');
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarImage 
+              src={userData?.avatar || "/avatars/01.png"} 
+              alt={userData?.name || "Usuario"} 
+            />
+            <AvatarFallback>
+              {userData ? userData.name.charAt(0) + userData.last_name.charAt(0) : "UN"}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">
+              {userData ? `${userData.name} ${userData.last_name}` : 'Cargando...'}
+            </p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {userData?.email || 'Cargando...'}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem>
+            <User className="mr-2 h-4 w-4" />
+            <span>Perfil</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Configuración</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Cerrar sesión</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
@@ -88,7 +192,6 @@ const Header = () => {
           <nav className="flex items-center space-x-6">
             <NavLink href="/events" icon={BsCalendar}>Events</NavLink>
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
-            <NavLink href="/dashboard" icon={BsPerson}>Profile</NavLink>
             
             <div className="flex items-center space-x-2 border-l pl-6 ml-2 border-gray-200 dark:border-gray-700">
               <Button 
@@ -99,15 +202,7 @@ const Header = () => {
                 {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
               
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </Button>
+              <UserMenu />
             </div>
           </nav>
         </div>
