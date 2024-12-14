@@ -44,9 +44,6 @@ import {
   Briefcase,
   Activity
 } from 'lucide-react';
-
-import { RiSettings4Fill as Gears } from "react-icons/ri";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

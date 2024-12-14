@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Code } from "@/components/ui/code-comparison";
 import { Code as LucideCode } from "lucide-react";
-import FormulaComponent from "@/components/ui/FormulaComponent";
 import { Confetti, fireSideConfetti } from "@/components/ui/confetti";
 import WordRotate from "@/components/ui/word-rotate";
 import Cookies from "js-cookie";
@@ -26,6 +25,24 @@ import { CheckCircle, Activity, XCircle } from "react-feather";
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Editor } from "@/components/ui/editor";
+import ResultsModal from "./ResultsModal";
 
 interface Problem {
   id: number;
@@ -44,6 +61,8 @@ interface testResult {
   output: string;
   execution_time: number;
   peak_memory: number;
+  error_message?: string;
+  input?: string;
 }
 interface SolutionState {
   status: string | null;
@@ -52,6 +71,15 @@ interface SolutionState {
 
 interface ProblemShowcaseProps {
   id: string;
+}
+
+interface Submission {
+  id: number;
+  status: string;
+  language: string;
+  execution_time: number;
+  memory_usage: number;
+  submitted_at: string;
 }
 
 const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
@@ -68,9 +96,12 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
   const [showFinalResults, setShowFinalResults] = useState(false);
   const [completedTests, setCompletedTests] = useState(0);
   const totalTestsRef = useRef(0);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [showResultsModal, setShowResultsModal] = useState(false);
   
   useEffect(() => {
     fetchProblem();
+    fetchSubmissions();
   }, [id]);
 
   const fetchProblem = async () => {
@@ -105,6 +136,30 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
     }
   };
 
+  const fetchSubmissions = async () => {
+    const accessToken = Cookies.get("access_token");
+    if (!accessToken) return;
+
+    try {
+      setSubmissions([]); // Reset submissions
+      const response = await fetch(`http://127.0.0.1:8000/solutions/problems/${id}/submissions/`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Submissions received:", data); // Para debug
+        setSubmissions(data);
+      } else {
+        console.error("Error fetching submissions:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+    }
+  };
+
   const handleWebSocket = (solutionId: number) => {
     const token = Cookies.get("access_token");
     if (!token) {
@@ -125,57 +180,49 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
         const message = JSON.parse(event.data);
         
         if (message.status === "Running") {
-          const testCaseInfo = message.message.match(/Test case (\d+)\/\d+: (.+)/);
+          const testCaseInfo = message.message.match(/Test case (\d+)\/(\d+): (.+)/);
           if (testCaseInfo) {
-            setShowFinalResults(false);
-            setShowConfetti(false); // Reset confetti state
             const testCaseNumber = parseInt(testCaseInfo[1]);
-            const totalCases = parseInt(testCaseInfo[0].split('/')[1]);
-            totalTestsRef.current = totalCases; // Guardar el total de tests
+            const totalCases = parseInt(testCaseInfo[2]);
+            const result = testCaseInfo[3];
             
-            const result = testCaseInfo[2];
+            totalTestsRef.current = totalCases;
             
-            const testResult = {
-              status: result.includes("Passed") ? "Passed" : "Failed",
-              expected: "N/A",
-              output: "N/A",
-              execution_time: 0,
-              peak_memory: 0
-            };
+            // Crear un nuevo array de resultados si no existe
+            setSolution(prev => {
+              const newOutput = Array.isArray(prev.output) ? [...prev.output] : Array(totalCases).fill(null);
+              
+              newOutput[testCaseNumber - 1] = {
+                status: result.includes("Passed") ? "Passed" : "Failed",
+                expected: message.expected || "N/A",
+                output: message.output || "N/A",
+                execution_time: message.execution_time || 0,
+                peak_memory: message.peak_memory || 0,
+                error_message: message.error_message || "",
+                input: message.input || "N/A"
+              };
 
-            setSolution(prev => ({
-              status: message.status,
-              output: Array.isArray(prev.output) 
-                ? [
-                    ...prev.output.slice(0, testCaseNumber - 1),
-                    testResult,
-                    ...prev.output.slice(testCaseNumber)
-                  ]
-                : Array(totalCases).fill(null).map((_, i) => 
-                    i === testCaseNumber - 1 ? testResult : {
-                      status: "Pending",
-                      expected: "N/A",
-                      output: "N/A",
-                      execution_time: 0,
-                      peak_memory: 0
-                    }
-                  )
-            }));
+              return {
+                status: "Running",
+                output: newOutput
+              };
+            });
 
-            setIsTestCaseRotating(true);
             setCurrentTestCaseIndex(testCaseNumber - 1);
+            setIsTestCaseRotating(true);
+            setShowResultsModal(true); // Mantener el modal abierto durante la ejecución
           }
         } else if (message.status === "Completed") {
           const isAllAccepted = message.message.includes("Solution Accepted");
           
-          // Primero completamos la rotación
-          if (solution.output && Array.isArray(solution.output)) {
-            setCompletedTests(0); // Reset contador
-            setIsTestCaseRotating(true);
-            
-            // Usar el WordRotate para mostrar los resultados
-            // El completedTests se incrementará cuando cada test termine de mostrarse
+          if (isAllAccepted) {
+            setShowConfetti(true);
+            fireSideConfetti();
           }
+          
+          // Asegurar que el modal permanezca abierto
+          setShowResultsModal(true);
+          setIsTestCaseRotating(false);
         }
 
       } catch (error) {
@@ -205,11 +252,11 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
         setShowConfetti(true);
         fireSideConfetti();
         setTimeout(() => {
-          setShowFinalResults(true);
+          setShowResultsModal(true);
           setShowConfetti(false);
         }, 3000);
       } else {
-        setShowFinalResults(true);
+        setShowResultsModal(true);
       }
     }
   }, [completedTests, solution.output]);
@@ -384,162 +431,177 @@ if (loading) return (
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <LucideCode className="h-5 w-5 text-primary" />
-                Descripción del Problema
+                Información del Problema
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="prose dark:prose-invert max-w-none">
-                <p>{problem.description}</p>
-              </div>
+            <CardContent>
+              <Tabs defaultValue="description" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="description">Descripción</TabsTrigger>
+                  <TabsTrigger value="submissions">Envíos</TabsTrigger>
+                  <TabsTrigger value="discussions">Discusiones</TabsTrigger>
+                </TabsList>
 
-              {problem.formula && (
-                <div className="p-4 rounded-lg bg-muted">
-                </div>
-              )}
+                <TabsContent value="description" className="space-y-4">
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p>{problem.description}</p>
+                  </div>
 
-              {problem.examples && (
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Ejemplos</h3>
-                  <Carousel>
-                    <CarouselContent>
-                      {problem.examples.map((example, index) => (
-                        <CarouselItem key={index}>
-                          <Card>
-                            <CardContent className="p-4 space-y-4">
-                              <div className="space-y-2">
-                                <Badge variant="outline">Ejemplo {index + 1}</Badge>
-                                <div className="space-y-2">
-                                  <Code className="w-full p-3">{`Input: ${example.input}`}</Code>
-                                  <Code className="w-full p-3">{`Output: ${example.output}`}</Code>
+                  {problem.formula && (
+                    <div className="p-4 rounded-lg bg-muted">
+                    </div>
+                  )}
+
+                  {problem.examples && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg">Ejemplos</h3>
+                      <Carousel>
+                        <CarouselContent>
+                          {problem.examples.map((example, index) => (
+                            <CarouselItem key={index}>
+                              <Card>
+                                <CardContent className="p-4 space-y-4">
+                                  <div className="space-y-2">
+                                    <Badge variant="outline">Ejemplo {index + 1}</Badge>
+                                    <div className="space-y-2">
+                                      <Code className="w-full p-3">{`Input: ${example.input}`}</Code>
+                                      <Code className="w-full p-3">{`Output: ${example.output}`}</Code>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </Carousel>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="submissions">
+                  <ScrollArea className="h-[400px]">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Estado</TableHead>
+                            <TableHead className="w-[100px]">Lenguaje</TableHead>
+                            <TableHead className="w-[100px] text-right">Tiempo</TableHead>
+                            <TableHead className="w-[100px] text-right">Memoria</TableHead>
+                            <TableHead className="w-[150px]">Enviado</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {submissions === null ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center py-6">
+                                <div className="flex items-center justify-center">
+                                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                                  Cargando envíos...
                                 </div>
-                                <div className="text-sm text-muted-foreground">
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                  </Carousel>
-                </div>
-              )}
+                              </TableCell>
+                            </TableRow>
+                          ) : submissions.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                                No hay envíos para mostrar
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            submissions.map((submission) => (
+                              <TableRow key={submission.id}>
+                                <TableCell>
+                                  <Badge 
+                                    variant={submission.status === "Accepted" ? "default" : "destructive"}
+                                    className="whitespace-nowrap"
+                                  >
+                                    {submission.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">
+                                  {submission.language}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {submission.execution_time.toFixed(2)}ms
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {submission.memory_usage.toFixed(2)}MB
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap text-muted-foreground">
+                                  {formatDistanceToNow(new Date(submission.submitted_at), {
+                                    addSuffix: true,
+                                    locale: es
+                                  })}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="discussions">
+                  <div className="text-center text-muted-foreground py-8">
+                    Las discusiones estarán disponibles próximamente.
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
           {/* Code Editor Card */}
           <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LucideCode className="h-5 w-5 text-primary" />
-                    Tu Solución
-                  </CardTitle>
-                  <CardDescription>
-                    Escribe tu código en Python para resolver el problema
-                  </CardDescription>
-                </CardHeader>
-              <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="# Escribe tu código aquí..."
-                  className="font-mono min-h-[400px] resize-none bg-muted"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                />
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleSubmit} 
-                    disabled={submitting}
-                    className="w-full"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-                        Ejecutando...
-                      </>
-                    ) : (
-                      "Enviar Solución"
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleReset}
-                    className="w-32"
-                  >
-                    Resetear
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <CardContent className="space-y-4">
+  <Editor
+    value={code}
+    onChange={setCode}
+    placeholder="Escribe tu solución aquí..."
+    className="font-mono bg-muted"
+    language="python"
+  />
+  <div className="flex gap-2">
+    <Button 
+      onClick={handleSubmit} 
+      disabled={submitting}
+      className="w-full"
+    >
+      {submitting ? (
+        <>
+          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+          Ejecutando...
+        </>
+      ) : (
+        "Enviar Solución"
+      )}
+    </Button>
+    <Button 
+      variant="outline" 
+      onClick={handleReset}
+      className="w-32"
+    >
+      Resetear
+    </Button>
+  </div>
+</CardContent>
 
             {/* Results Card */}
             {solution.output && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-primary" />
-                    Resultados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isTestCaseRotating ? (
-                    <div className="space-y-4">
-                      <Progress 
-                        value={(completedTests / totalTestsRef.current) * 100} 
-                        className="h-2"
-                      />
-                      <div className="p-4 rounded-lg bg-muted animate-pulse">
-                        <WordRotate 
-                          testCases={Array.isArray(solution.output) ? solution.output : []}
-                          onTestComplete={() => setCompletedTests(prev => prev + 1)}
-                        >
-                          <div className="text-center space-y-2">
-                            <p className="font-semibold">
-                              Test Case {currentTestCaseIndex + 1}/{totalTestsRef.current}
-                            </p>
-                            <Badge variant={
-                              typeof solution.output[currentTestCaseIndex] === 'object' && solution.output[currentTestCaseIndex]?.status === "Passed" 
-                                ? "default" 
-                                : "destructive"
-                            }>
-                              {typeof solution.output[currentTestCaseIndex] === 'object' ? solution.output[currentTestCaseIndex]?.status : ''}
-                            </Badge>
-                          </div>
-                        </WordRotate>
-                      </div>
-                    </div>
-                  ) : showFinalResults && (
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-2">
-                        {Array.isArray(solution.output) && solution.output.map((result: testResult, index: number) => (
-                          <div
-                            key={index}
-                            className={cn(
-                              "p-4 rounded-lg transition-colors",
-                              result.status === "Passed" 
-                                ? "bg-primary/10 border border-primary/20" 
-                                : "bg-destructive/10 border border-destructive/20"
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">Test Case {index + 1}</span>
-                              <Badge variant={result.status === "Passed" ? "default" : "destructive"}>
-                                {result.status === "Passed" ? (
-                                  <CheckCircle className="mr-1 h-3 w-3" />
-                                ) : (
-                                  <XCircle className="mr-1 h-3 w-3" />
-                                )}
-                                {result.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  )}
-                </CardContent>
-              </Card>
+              <ResultsModal
+                isOpen={showResultsModal}
+                onClose={() => setShowResultsModal(false)}
+                results={Array.isArray(solution.output) ? solution.output : []}
+                isRotating={isTestCaseRotating}
+                currentIndex={currentTestCaseIndex}
+                totalTests={totalTestsRef.current}
+                completedTests={completedTests}
+                onTestComplete={() => setCompletedTests(prev => prev + 1)}
+              />
             )}
           </div>
         </div>

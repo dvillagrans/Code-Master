@@ -227,6 +227,63 @@ def send_feedback(solution_id, testcase_index, total_testcases, status, message)
         },
     )
 
+async def execute_test_case(channel_layer, solution_id, test_case, test_number, total_tests):
+    try:
+        # Tu lógica de ejecución actual...
+        
+        # Formatear el resultado usando el método del modelo TestCase
+        test_result = test_case.format_test_result(
+            actual_output=output,
+            execution_time=execution_time,
+            peak_memory=peak_memory
+        )
+
+        # Enviar resultado detallado
+        await channel_layer.group_send(
+            f"solution_{solution_id}",
+            {
+                "type": "send_solution_update",
+                "status": "Running",
+                "message": f"Test case {test_number}/{total_tests}: {'Passed' if test_result['status'] == 'Passed' else 'Failed'}",
+                "test_case_result": {
+                    "test_case_number": test_number,
+                    "total_test_cases": total_tests,
+                    **test_result
+                }
+            }
+        )
+
+        # Si es el último test, enviar resultado final
+        if test_number == total_tests:
+            await channel_layer.group_send(
+                f"solution_{solution_id}",
+                {
+                    "type": "send_solution_update",
+                    "status": "Completed",
+                    "message": "Solution Accepted" if all_tests_passed else "Solution Failed",
+                    "test_case_result": {
+                        "final_status": "Accepted" if all_tests_passed else "Failed",
+                        "total_execution_time": total_time,
+                        "max_memory_used": max_memory
+                    }
+                }
+            )
+
+    except Exception as e:
+        # Enviar error
+        await channel_layer.group_send(
+            f"solution_{solution_id}",
+            {
+                "type": "send_solution_update",
+                "status": "Error",
+                "message": str(e),
+                "test_case_result": {
+                    "status": "Error",
+                    "error_message": str(e)
+                }
+            }
+        )
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=5)
 def evaluate_solution(self, solution_id):
     try:

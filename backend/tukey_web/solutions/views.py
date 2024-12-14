@@ -143,3 +143,34 @@ class SolutionDetailView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+class ProblemSubmissionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, problem_id):
+        try:
+            submissions = Solution.objects.filter(
+                problem_id=problem_id,
+                user=request.user
+            ).order_by('-created_at')
+
+            # Agregar print para debug
+            print(f"Found {submissions.count()} submissions for problem {problem_id}")
+            
+            submissions_data = [{
+                'id': submission.id,
+                'status': submission.status,
+                'language': submission.language,
+                'execution_time': submission.time or 0,  # Manejar None
+                'memory_usage': submission.memory or 0,  # Manejar None
+                'submitted_at': submission.created_at.isoformat(),
+            } for submission in submissions]
+
+            return Response(submissions_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"Error in ProblemSubmissionsView: {str(e)}")  # Debug
+            return Response(
+                {'error': f'An unexpected error occurred: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
