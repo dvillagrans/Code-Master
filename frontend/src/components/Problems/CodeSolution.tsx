@@ -25,6 +25,7 @@ import {
 import { CheckCircle, Activity, XCircle } from "react-feather";
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Problem {
   id: number;
@@ -273,7 +274,65 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
     setCode("");
   };
 
-  if (loading) return <div>Loading...</div>;
+if (loading) return (
+  <div className="min-h-screen bg-background">
+    <Header />
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header Section */}
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-2/3" />
+        <Skeleton className="h-6 w-1/3" />
+        <Skeleton className="h-4 w-1/5" />
+      </div>
+
+      <Separator />
+
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-[1fr_1fr] gap-8">
+        {/* Problem Description Card */}
+        <Card className="lg:sticky lg:top-4 h-fit">
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-6 w-1/5" />
+          </CardContent>
+        </Card>
+
+        {/* Code Editor Card */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-4 w-1/3 mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-40 w-full bg-muted" />
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-1/2" />
+                <Skeleton className="h-10 w-1/4" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-1/3" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-5/6" />
+              <Skeleton className="h-6 w-2/3" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </div>
+);
 
   if (!problem) {
     return <div>Error: Problem not found</div>;
@@ -335,7 +394,6 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
 
               {problem.formula && (
                 <div className="p-4 rounded-lg bg-muted">
-                  <FormulaComponent formula={problem.formula} />
                 </div>
               )}
 
@@ -355,7 +413,6 @@ const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
                                   <Code className="w-full p-3">{`Output: ${example.output}`}</Code>
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  <FormulaComponent formula={example.explanation} />
                                 </div>
                               </div>
                             </CardContent>

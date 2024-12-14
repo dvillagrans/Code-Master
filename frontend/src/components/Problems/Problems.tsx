@@ -63,6 +63,9 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils" // Asegúrate de agregar esta importación
+import ProblemCard from "./ProblemCard"
+import FiltersPanel from "./FiltersPanel"
+import RankingPanel from "./RankingPanel";
 
 const ProblemsList = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
@@ -263,16 +266,39 @@ const ProblemsList = () => {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="space-y-4">
-          {[1, 2, 3].map((item) => (
-            <Skeleton key={item} className="h-[200px] w-[300px] rounded-xl" />
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        {/* Header Section Skeleton */}
+        <div className="space-y-4 mb-8">
+          <Skeleton className="h-10 w-2/3 rounded" />
+          <Skeleton className="h-6 w-1/2 rounded" />
+        </div>
+
+        {/* Skeleton Grid for Problems */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="p-4 bg-card rounded-lg shadow">
+              <Skeleton className="h-6 w-3/4 rounded mb-4" /> {/* Problem Title */}
+              <Skeleton className="h-4 w-full rounded mb-2" /> {/* Description */}
+              <Skeleton className="h-4 w-2/3 rounded mb-6" /> {/* Second line */}
+              <div className="flex justify-between items-center mb-4">
+                <Skeleton className="h-6 w-1/4 rounded" /> {/* Time */}
+                <Skeleton className="h-6 w-1/4 rounded" /> {/* Points */}
+              </div>
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-8 w-1/3 rounded" /> {/* Badge */}
+                <Skeleton className="h-8 w-1/4 rounded" /> {/* Button */}
+              </div>
+            </div>
           ))}
         </div>
       </div>
-    )
-  }
+      <Footer />
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-background">
@@ -292,97 +318,19 @@ const ProblemsList = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-8">
           {/* Filters Panel */}
-          <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
-            <ScrollArea className="h-full">
-              <div className="space-y-6 p-4 bg-card rounded-xl border shadow-sm">
-                {/* Search Bar */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Search</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input 
-                      placeholder="Search problems..." 
-                      className="pl-9 bg-background"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Difficulty Tabs */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Difficulty</Label>
-                  <Tabs 
-                    value={selectedDifficulty} 
-                    onValueChange={setSelectedDifficulty} 
-                    className="w-full"
-                  >
-                    <TabsList className="grid w-full grid-cols-4 h-9">
-                      {difficulties.map((diff) => (
-                        <TabsTrigger 
-                          key={diff.name} 
-                          value={diff.name}
-                          className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                        >
-                          {diff.name}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                <Separator />
-
-                {/* Status Radio Group */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Status</Label>
-                  <RadioGroup
-                    value={completionFilter}
-                    onValueChange={setCompletionFilter}
-                    className="flex flex-col space-y-2"
-                  >
-                    {completionStates.map((state) => (
-                      <div key={state.value} 
-                          className="flex items-center space-x-2 rounded-lg hover:bg-accent p-2 transition-colors">
-                        <RadioGroupItem value={state.value} id={state.value} />
-                        <Label htmlFor={state.value} className="flex items-center flex-1 cursor-pointer">
-                          <state.icon className="mr-2 h-4 w-4 text-primary" />
-                          {state.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <Separator />
-
-                {/* Category Grid */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Category</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {categoriesWithIcons.map((category) => (
-                      <Button
-                        key={category.name}
-                        variant={selectedCategory === category.name ? "default" : "outline"}
-                        className={cn(
-                          "flex items-center justify-start gap-2 h-auto py-2 px-3 transition-all",
-                          selectedCategory === category.name && "bg-primary text-primary-foreground",
-                          "hover:bg-accent hover:text-accent-foreground"
-                        )}
-                        onClick={() => setSelectedCategory(category.name)}
-                      >
-                        <category.icon className="h-4 w-4" />
-                        <span className="text-sm truncate">{category.name}</span>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </ScrollArea>
-          </div>
+          <FiltersPanel
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedDifficulty={selectedDifficulty}
+            setSelectedDifficulty={setSelectedDifficulty}
+            completionFilter={completionFilter}
+            setCompletionFilter={setCompletionFilter}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            difficulties={difficulties}
+            completionStates={completionStates}
+            categoriesWithIcons={categoriesWithIcons}
+          />
 
           {/* Problems Grid */}
           <div className="space-y-6">
@@ -396,189 +344,15 @@ const ProblemsList = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredProblems.map((problem) => (
-                  <Card 
-                    key={problem.id} 
-                    className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                    onClick={() => window.location.href = `/problem/${problem.id}`}
-                  >
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xl flex items-center">
-                        {/* Add category icon to the problem title */}
-                        {categoriesWithIcons.find(cat => cat.name === problem.category)?.icon && (
-                          React.createElement(
-                            categoriesWithIcons.find(cat => cat.name === problem.category)!.icon, 
-                            { className: "mr-2 text-muted-foreground size-5" }
-                          )
-                        )}
-                        {problem.title}
-                      </CardTitle>
-                      {problem.completed && <CheckCircle className="text-green-500" />}
-                    </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground line-clamp-2 mb-4">
-                      {problem.description}
-                    </p>
-                    
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex gap-4">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="text-purple-500 size-4" />
-                          <span>{problem.timeLimit} min</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Trophy className="text-yellow-500 size-4" />
-                          <span>{problem.points} pts</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <Badge variant={getDifficultyVariant(problem.difficulty)}>
-                        <Star className="mr-1 size-4" /> {problem.difficulty}
-                      </Badge>
-                      
-                      <Button 
-                        variant="secondary" 
-                        size="sm"
-                        onClick={() => window.location.href = `/problem/${problem.id}`}
-                      >
-                        Solve Problem
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  <ProblemCard key={problem.id} problem={problem} />
+                  ))}
+                  </div>
           )}
         </div>
 
-        {/* Ranking Panel */}
-        <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
-          <ScrollArea className="h-full">
-            <div className="space-y-6 p-4 bg-card rounded-xl border shadow-sm">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg flex items-center">
-                  <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
-                  Top 10 Users
-                </h3>
-                <Separator />
-                <div className="space-y-4">
-                  {topUsers.slice(0, 10).map((user, index) => (
-                    <div
-                      key={user.username}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-accent transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`font-bold ${
-                          index === 0 ? "text-yellow-500" :
-                          index === 1 ? "text-gray-400" :
-                          index === 2 ? "text-amber-600" :
-                          "text-muted-foreground"
-                        }`}>
-                          #{index + 1}
-                        </span>
-                        <span>{user.username}</span>
-                      </div>
-                      <Badge variant="secondary" className="ml-2">
-                        {user.points} pts
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6">
-                <h3 className="font-semibold text-lg flex items-center mb-4">
-                  <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
-                  Progress Tracker
-                </h3>
-                <Separator className="mb-4" />
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center mb-6">
-                    <div className="relative w-32 h-32">
-                      <svg className="w-full h-full" viewBox="0 0 100 100">
-                        {/* Círculo de fondo */}
-                        <circle
-                          className="text-muted stroke-current"
-                          strokeWidth="10"
-                          stroke="currentColor"
-                          fill="transparent"
-                          r="40"
-                          cx="50"
-                          cy="50"
-                        />
-                        {/* Círculo de progreso */}
-                        <circle
-                          className="text-primary stroke-current"
-                          strokeWidth="10"
-                          strokeLinecap="round"
-                          stroke="currentColor"
-                          fill="transparent"
-                          r="40"
-                          cx="50"
-                          cy="50"
-                          style={{
-                            strokeDasharray: `${2 * Math.PI * 40}`,
-                            strokeDashoffset: `${2 * Math.PI * 40 * (1 - progressStats.total.completed / progressStats.total.total)}`,
-                            transform: 'rotate(-90deg)',
-                            transformOrigin: '50% 50%'
-                          }}
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <span className="text-2xl font-bold">
-                            {Math.round((progressStats.total.completed / progressStats.total.total) * 100)}%
-                          </span>
-                          <p className="text-xs text-muted-foreground">Completado</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Easy</span>
-                      <span className="font-medium text-green-500">
-                        {progressStats.easy.completed}/{progressStats.easy.total}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(progressStats.easy.completed / progressStats.easy.total) * 100 || 0} 
-                      className="h-2 bg-green-100" 
-                    />
-                  </div>
-          
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Medium</span>
-                      <span className="font-medium text-yellow-500">
-                        {progressStats.medium.completed}/{progressStats.medium.total}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(progressStats.medium.completed / progressStats.medium.total) * 100 || 0} 
-                      className="h-2 bg-yellow-100" 
-                    />
-                  </div>
-          
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Hard</span>
-                      <span className="font-medium text-red-500">
-                        {progressStats.hard.completed}/{progressStats.hard.total}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(progressStats.hard.completed / progressStats.hard.total) * 100 || 0} 
-                      className="h-2 bg-red-100 bg-red-500"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-        </div>
+          {/* Ranking Panel */}
+          <RankingPanel topUsers={topUsers} progressStats={progressStats} />
+        
       </div>
     </div>
       <Toaster />
