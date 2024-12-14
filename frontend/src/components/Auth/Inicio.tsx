@@ -24,7 +24,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { motion } from "framer-motion";
-import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebaseConfig";
 import * as yup from "yup";
@@ -237,19 +236,6 @@ const loginWithGoogle = async () => {
     }
   };
   
-  // Datos de ejemplo para el gráfico
-  const chartData = [
-    { month: 'Jan', profit: 65, expenses: 85 },
-    { month: 'Feb', profit: 75, expenses: 70 },
-    { month: 'Mar', profit: 60, expenses: 65 },
-    { month: 'Apr', profit: 45, expenses: 55 },
-    { month: 'May', profit: 40, expenses: 50 },
-    { month: 'Jun', profit: 35, expenses: 45 },
-    { month: 'Jul', profit: 30, expenses: 40 },
-    { month: 'Aug', profit: 45, expenses: 60 },
-    { month: 'Sep', profit: 35, expenses: 45 },
-    { month: 'Oct', profit: 50, expenses: 65 },
-  ];
 
   return (
     <>
@@ -433,68 +419,73 @@ const loginWithGoogle = async () => {
 
         <div className="hidden lg:block lg:w-7/12 bg-gradient-to-br from-blue-500 to-purple-500 p-12">
           <div className="h-full flex flex-col justify-center items-center text-white">
-            <h1 className="text-4xl font-bold mb-4">Welcome back!</h1>
-            <h2 className="text-3xl font-semibold mb-8">
-              Please sign in to your{' '}
-              <span className="underline decoration-4 decoration-white/30">
-                CodeMaster Pro
-              </span>{' '}
-              account
-            </h2>
-            <p className="text-lg mb-12 text-white/80 text-center max-w-2xl">
-              Access your dashboard, track your progress, and continue your learning journey with our comprehensive coding exercises and challenges.
+            <h1 className="text-4xl font-bold mb-4">Welcome to CodeMaster Pro</h1>
+            <p className="text-xl mb-12 text-white/90 text-center max-w-2xl">
+              Your journey to becoming a better developer starts here
             </p>
 
-            {/* Dashboard Preview */}
-            <div className="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold mb-2">Sales Report</h3>
-                <div className="flex space-x-4">
-                  <span className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-300 rounded-full mr-2"></div>
-                    Profit
-                  </span>
-                  <span className="flex items-center">
-                    <div className="w-3 h-3 bg-white/60 rounded-full mr-2"></div>
-                    Expenses
-                  </span>
+            {/* Nueva sección de características */}
+            <div className="w-full max-w-3xl space-y-8">
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Smart Learning Path</h3>
+                    <p className="text-white/80">Personalized learning experience that adapts to your skill level and goals</p>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="rgba(255,255,255,0.5)"
-                      tick={{ fill: 'rgba(255,255,255,0.8)' }}
-                    />
-                    <YAxis 
-                      stroke="rgba(255,255,255,0.5)"
-                      tick={{ fill: 'rgba(255,255,255,0.8)' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="profit"
-                      stroke="#93C5FD"
-                      strokeWidth={3}
-                      dot={{ fill: '#93C5FD', strokeWidth: 2 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="expenses"
-                      stroke="rgba(255,255,255,0.6)"
-                      strokeWidth={3}
-                      dot={{ fill: 'rgba(255,255,255,0.8)', strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Community Driven</h3>
+                    <p className="text-white/80">Connect with other developers, share knowledge and grow together</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Real-World Projects</h3>
+                    <p className="text-white/80">Practice with actual projects and build your professional portfolio</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
 
-            {/* Indicator Dots */}
-            <div className="flex space-x-2 mt-8">
+            {/* Indicadores */}
+            <div className="flex space-x-2 mt-12">
               <div className="w-2 h-2 rounded-full bg-white"></div>
               <div className="w-2 h-2 rounded-full bg-white/50"></div>
               <div className="w-2 h-2 rounded-full bg-white/50"></div>

@@ -245,25 +245,27 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Create password"
-                            className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-                          />
-                        </FormControl>
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="w-5 h-5" />
-                          ) : (
-                            <Eye className="w-5 h-5" />
-                          )}
-                        </button>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create password"
+                              className="pr-10"
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -274,25 +276,27 @@ const SignUp = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type={showConfirmPassword ? "text" : "password"}
-                            placeholder="Confirm password"
-                            className="w-full bg-gray-100 dark:bg-gray-800 border-0 pr-10"
-                          />
-                        </FormControl>
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="w-5 h-5" />
-                          ) : (
-                            <Eye className="w-5 h-5" />
-                          )}
-                        </button>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirm password"
+                              className="pr-10"
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -302,7 +306,7 @@ const SignUp = () => {
                     control={form.control}
                     name="terms"
                     render={({ field }) => (
-                      <FormItem className="flex items-start space-x-2">
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md">
                         <FormControl>
                           <Checkbox
                             checked={field.value}
@@ -310,11 +314,15 @@ const SignUp = () => {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>
+                          <FormLabel className="text-sm font-normal">
                             I agree to the{' '}
-                            <Button variant="link" className="p-0 h-auto">Terms of Service</Button>
+                            <Button variant="link" className="p-0 h-auto text-sm font-normal">
+                              Terms of Service
+                            </Button>
                             {' '}and{' '}
-                            <Button variant="link" className="p-0 h-auto">Privacy Policy</Button>
+                            <Button variant="link" className="p-0 h-auto text-sm font-normal">
+                              Privacy Policy
+                            </Button>
                           </FormLabel>
                         </div>
                       </FormItem>
@@ -402,67 +410,95 @@ const SignUp = () => {
       {/* Preview Section */}
       <div className="hidden lg:block lg:w-7/12 bg-gradient-to-br from-blue-500 to-purple-500 p-12">
         <div className="h-full flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl font-bold mb-4">Join Our Community</h1>
-          <h2 className="text-3xl font-semibold mb-8">
-            Start your journey with{' '}
-            <span className="underline decoration-4 decoration-white/30">
-              CodeMaster Pro
-            </span>
-          </h2>
-          <p className="text-lg mb-12 text-white/80 text-center max-w-2xl">
-            Join thousands of developers who are already improving their coding skills, 
-            participating in challenges, and building amazing projects.
+          <h1 className="text-4xl font-bold mb-4">Start Your Journey Today</h1>
+          <p className="text-xl mb-12 text-white/90 text-center max-w-2xl">
+            Join thousands of developers who are already part of our community
           </p>
 
-          {/* Community Growth Preview */}
-          <div className="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold mb-2">Community Growth</h3>
-              <div className="flex space-x-4">
-                <span className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-300 rounded-full mr-2"></div>
-                  Active Users
-                </span>
-                <span className="flex items-center">
-                  <div className="w-3 h-3 bg-white/60 rounded-full mr-2"></div>
-                  New Sign-ups
-                </span>
+          {/* Features Section */}
+          <div className="w-full max-w-3xl space-y-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Customizable Learning</h3>
+                  <p className="text-white/80">Tailor your learning experience to match your goals and schedule</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="rgba(255,255,255,0.5)"
-                    tick={{ fill: 'rgba(255,255,255,0.8)' }}
-                  />
-                  <YAxis 
-                    stroke="rgba(255,255,255,0.5)"
-                    tick={{ fill: 'rgba(255,255,255,0.8)' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="activeUsers"
-                    stroke="#93C5FD"
-                    strokeWidth={3}
-                    dot={{ fill: '#93C5FD', strokeWidth: 2 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="newSignups"
-                    stroke="rgba(255,255,255,0.6)"
-                    strokeWidth={3}
-                    dot={{ fill: 'rgba(255,255,255,0.8)', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Project-Based Learning</h3>
+                  <p className="text-white/80">Build real projects and add them to your portfolio as you learn</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Expert Mentorship</h3>
+                  <p className="text-white/80">Get guidance from experienced developers in our community</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Testimonial Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl mt-8"
+            >
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold">Sarah Johnson</h4>
+                  <p className="text-white/60">Full Stack Developer</p>
+                </div>
+              </div>
+              <p className="text-white/80 italic">
+                "CodeMaster Pro transformed my coding journey. The structured learning path and supportive community helped me land my dream job in tech."
+              </p>
+            </motion.div>
           </div>
 
-          {/* Indicator Dots */}
+          {/* Progress Indicators */}
           <div className="flex space-x-2 mt-8">
             <div className="w-2 h-2 rounded-full bg-white"></div>
             <div className="w-2 h-2 rounded-full bg-white/50"></div>
