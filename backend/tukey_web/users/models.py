@@ -15,11 +15,10 @@ def user_avatar_upload_path(instance, filename):
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
         ('admin', 'Admin'),
+        ('user', 'User'),
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
     firebase_uid = models.CharField(max_length=128, unique=True, null=True, blank=True)
 

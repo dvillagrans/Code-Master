@@ -46,6 +46,15 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>;
 
+// Agregar interface para la respuesta del login
+interface LoginResponse {
+  access: string;
+  refresh: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'user';  // Agregar el rol del usuario
+}
+
 const InicioS = () => {
 
 const loginWithGitHub = async () => {
@@ -64,7 +73,7 @@ const loginWithGitHub = async () => {
 
     if (response.ok) {
       toast.success(`¡Bienvenido, ${result.user.displayName || result.user.email}!`);
-      window.location.href = "/dashboard";
+      handleRedirect(data.role); // Usar la nueva función de redirección
     } else {
       // Manejamos diferentes tipos de errores del backend
       switch (data.detail) {
@@ -108,7 +117,7 @@ const loginWithGoogle = async () => {
 
     if (response.ok) {
       toast.success(`¡Bienvenido, ${result.user.displayName || result.user.email}!`);
-      window.location.href = "/dashboard";
+      handleRedirect(data.role); // Usar la nueva función de redirección
     } else {
       // Manejamos diferentes tipos de errores del backend
       switch (data.detail) {
@@ -148,11 +157,23 @@ const loginWithGoogle = async () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleRedirect = (role: string) => {
+    switch (role) {
+      case 'admin':
+        window.location.href = '/admin';
+        break;
+      case 'user':
+      default:
+        window.location.href = '/dashboard';
+        break;
+    }
+  };
+
   const handleLogin = async (data: FormData) => {
     setIsLoading(true);
   
     try {
-      const response = await axios.post(
+      const response = await axios.post<LoginResponse>(
         `${API_URL}/users/token/`,
         {
           username: data.username,
@@ -176,10 +197,11 @@ const loginWithGoogle = async () => {
         expires: 7,
       });
   
-      // Guardar información del usuario
+      // Guardar información del usuario incluyendo el rol
       Cookies.set('user_data', JSON.stringify({
         username: response.data.username,
-        email: response.data.email
+        email: response.data.email,
+        role: response.data.role
       }), {
         expires: 1,
         secure: true,
@@ -189,7 +211,9 @@ const loginWithGoogle = async () => {
       toast.success(`¡Bienvenido de nuevo, ${response.data.username}!`);
       setIsLoading(false);
   
-      window.location.href = "/dashboard";
+      // Redireccionar según el rol
+      handleRedirect(response.data.role);
+      
     } catch (error: any) {
       setIsLoading(false);
       
@@ -397,7 +421,7 @@ const loginWithGoogle = async () => {
                   <Button
                   variant="link"
                   className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                  onClick={() => window.location.href = '/signup'}
+                  onClick={() => window.location.href = '/register'}
                   >
                   Sign up
                   </Button>

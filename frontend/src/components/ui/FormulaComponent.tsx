@@ -1,6 +1,6 @@
 import React from "react";
 import "katex/dist/katex.min.css";
-import { BlockMath } from "react-katex";
+import ReactKaTeX from "react-katex";
 
 interface FormulaComponentProps {
   formula: string;
@@ -9,7 +9,7 @@ interface FormulaComponentProps {
 const FormulaComponent: React.FC<FormulaComponentProps> = ({ formula }) => {
   return (
     <div style={{ textAlign: "center", margin: "20px 0" }}>
-      <BlockMath>{formula}</BlockMath>
+      <ReactKaTeX.BlockMath>{formula}</ReactKaTeX.BlockMath>
     </div>
   );
 };

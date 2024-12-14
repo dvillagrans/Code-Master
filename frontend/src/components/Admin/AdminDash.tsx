@@ -34,28 +34,83 @@ import {
   TrendingUp,
   Code,
   Clock,
-  Medal
+  Medal,
+  Upload,
+  Plus
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import ProblemUpload from './submit_problem';
 
 const AdminDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
-    // Expanded metrics
+    // Métricas generales expandidas
     totalUsers: 5432,
     activeUsers: 3210,
     avgExercisesCompleted: 18.5,
     avgDailyStreak: 12,
     totalExercises: 75420,
     totalChallenges: 1205,
-    avgSessionTime: 45, // minutes
-    
+    avgSessionTime: 45,
+    newUsersToday: 127,
+    completionRate: 78.5,
+    errorRate: 21.5,
+
+    // Métricas de rendimiento
+    performanceMetrics: {
+      averageScore: 85.2,
+      completionTime: 32.5,
+      successRate: 76.8,
+      challengeParticipation: 45.3,
+      peerReviews: 892,
+      codeQualityScore: 88.4
+    },
+
+    // Métricas de contenido
+    contentMetrics: {
+      totalCourses: 24,
+      activeChallenges: 156,
+      exerciseCategories: 18,
+      averageDifficulty: 3.2,
+      mostPopularTags: ['algoritmos', 'web', 'bases-de-datos', 'frontend', 'backend'],
+      contentEngagement: 89.2
+    },
+
     // Enhanced user level and progress data
     userLevels: [
       { name: 'Básico', value: 2500, color: '#3B82F6' },
       { name: 'Intermedio', value: 1800, color: '#6366F1' },
       { name: 'Avanzado', value: 1132, color: '#8B5CF6' }
     ],
-    
+
+    // Datos de retención expandidos
+    retentionData: [
+      { period: '1 día', rate: 95 },
+      { period: '1 semana', rate: 82 },
+      { period: '1 mes', rate: 68 },
+      { period: '3 meses', rate: 54 },
+      { period: '6 meses', rate: 42 }
+    ],
+
+    // Métricas de participación
+    engagementMetrics: {
+      averageSessionsPerWeek: 4.2,
+      averageExercisesPerSession: 6.8,
+      forumParticipation: 34.5,
+      helpRequestsResolved: 892,
+      peerInteractions: 2341
+    },
+
     // New detailed metrics
     languageDistribution: [
       { language: 'Python', users: 1560, color: '#3B82F6' },
@@ -95,6 +150,16 @@ const AdminDashboard = () => {
     ]
   });
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [problemData, setProblemData] = useState({
+    title: '',
+    description: '',
+    difficulty: 'medium',
+    category: '',
+    testCases: ''
+  });
+
+
   const MetricCard = ({ icon: Icon, title, value, trend, description }: { icon: React.ComponentType<{ className?: string }>, title: string, value: number | string, trend: number, description?: string }) => (
     <Card className="bg-white/10 backdrop-blur-lg border-none text-white group hover:scale-105 transition-transform">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -120,6 +185,14 @@ const AdminDashboard = () => {
             <p className="text-white/80 text-lg">Análisis detallado de tu progreso y rendimiento</p>
           </div>
           <div className="flex space-x-4">
+            
+                <Button 
+                  className="bg-green-500/80 text-white hover:bg-green-600 flex items-center"
+                >
+                  <a href="/submitproblem" className="flex items-center">
+                    <Plus className="mr-2 w-4 h-4" /> Nuevo Problema
+                  </a>
+                </Button>
             <Button 
               variant="outline" 
               className="bg-white/10 text-white hover:bg-white/20 flex items-center"
@@ -134,14 +207,14 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Metrics Overview */}
+        {/* Métricas principales - ahora en 2 filas de 4 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <MetricCard 
             icon={Users} 
             title="Total Usuarios" 
             value={dashboardData.totalUsers} 
             trend={15.2}
-            description="Crecimiento constante de la comunidad"
+            description="Total de usuarios registrados"
           />
           <MetricCard 
             icon={Activity} 
@@ -167,9 +240,11 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/10 backdrop-blur-lg mb-6">
+          <TabsList className="grid w-full grid-cols-5 bg-white/10 backdrop-blur-lg mb-6">
             <TabsTrigger value="overview">Visión General</TabsTrigger>
             <TabsTrigger value="performance">Rendimiento</TabsTrigger>
+            <TabsTrigger value="content">Contenido</TabsTrigger>
+            <TabsTrigger value="engagement">Participación</TabsTrigger>
             <TabsTrigger value="leaderboard">Clasificación</TabsTrigger>
           </TabsList>
 
@@ -230,6 +305,26 @@ const AdminDashboard = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+
+              {/* Nueva sección de retención */}
+              <Card className="bg-white/10 backdrop-blur-lg border-none text-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Activity className="mr-2 w-5 h-5" /> Retención de Usuarios
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={dashboardData.retentionData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis dataKey="period" stroke="rgba(255,255,255,0.5)" />
+                      <YAxis stroke="rgba(255,255,255,0.5)" />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="rate" stroke="#10B981" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -279,6 +374,50 @@ const AdminDashboard = () => {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="content">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="bg-white/10 backdrop-blur-lg border-none text-white">
+                <CardHeader>
+                  <CardTitle>Métricas de Contenido</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Object.entries(dashboardData.contentMetrics).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center">
+                        <span className="text-white/70">{key}</span>
+                        <span className="font-bold">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Más cards de contenido... */}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="engagement">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="bg-white/10 backdrop-blur-lg border-none text-white">
+                <CardHeader>
+                  <CardTitle>Métricas de Participación</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Object.entries(dashboardData.engagementMetrics).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center">
+                        <span className="text-white/70">{key}</span>
+                        <span className="font-bold">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Más cards de participación... */}
             </div>
           </TabsContent>
 

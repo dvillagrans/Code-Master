@@ -1,0 +1,13 @@
+---
+import "@/styles/globals.css";
+import Layout from "../layouts/Layout.astro";
+import { isAdmin } from "../middleware/auth";
+import AdminDashboard from "@/components/Admin/AdminDash";
+
+// Verificar autenticación
+const auth = await isAdmin(Astro);
+---
+
+<Layout title="Panel de Administración">
+  <AdminDashboard client:load />
+</Layout>

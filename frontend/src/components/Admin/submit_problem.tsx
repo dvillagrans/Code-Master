@@ -7,12 +7,25 @@ import { Editor } from "@/components/ui/editor";
 import { Tags } from "@/components/ui/tags";
 import FormulaComponent from "@/components/ui/FormulaComponent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import Header from "@/components/Common/Header";
 import Footer from "@/components/Common/Footer";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { Code as LucideCode } from "lucide-react";
+import { Code } from "@/components/ui/code-comparison";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+
+
 // Definir esquema de validación
 const problemSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
@@ -81,7 +94,6 @@ const ProblemUpload = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      <Header />
       <main className="container mx-auto px-6 py-10">
         <div className="max-w-6xl mx-auto">
           <Tabs defaultValue="edit" className="space-y-8">
@@ -320,38 +332,111 @@ const ProblemUpload = () => {
             </TabsContent>
 
             <TabsContent value="preview">
-              <Card className="transition-shadow hover:shadow-md">
-                <CardContent className="p-8">
-                  <div className="prose dark:prose-invert max-w-none">
-                    <h1 className="text-3xl font-bold text-gray-800 mb-6">
-                      {form.watch("title")}
-                    </h1>
-                    <div dangerouslySetInnerHTML={{ __html: form.watch("description") }} />
-                    
+              <div className="grid lg:grid-cols-[1fr_1fr] gap-8">
+                {/* Problem Description Card */}
+                <Card className="lg:sticky lg:top-4 h-fit">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LucideCode className="h-5 w-5 text-primary" />
+                      Vista Previa del Problema
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+                        {form.watch("title")}
+                      </h1>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge 
+                          variant={form.watch("difficulty") === "hard" ? "destructive" : 
+                                  form.watch("difficulty") === "medium" ? "default" : "secondary"}
+                          className="font-medium"
+                        >
+                          {form.watch("difficulty")}
+                        </Badge>
+                        <Badge variant="outline">{form.watch("category")}</Badge>
+                        {form.watch("tags").map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="bg-primary/10">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="prose dark:prose-invert max-w-none">
+                      <div dangerouslySetInnerHTML={{ __html: form.watch("description") }} />
+                    </div>
+
                     {form.watch("formula") && (
-                      <div className="my-4">
-                        <FormulaComponent formula={form.watch("formula") ?? ""} />
+                      <div className="p-4 rounded-lg bg-muted">
                       </div>
                     )}
 
-                    {/* Preview de ejemplos */}
-                    <h2>Ejemplos</h2>
-                    {form.watch("examples").map((example, index) => (
-                      <div key={index} className="my-4 p-4 bg-muted rounded-lg">
-                        <div>
-                          <strong>Input:</strong> {example.input}
-                        </div>
-                        <div>
-                          <strong>Output:</strong> {example.output}
-                        </div>
-                        <div>
-                          <strong>Explanation:</strong> {example.explanation}
-                        </div>
+                    {form.watch("examples") && form.watch("examples").length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="font-semibold text-lg">Ejemplos</h3>
+                        <Carousel>
+                          <CarouselContent>
+                            {form.watch("examples").map((example, index) => (
+                              <CarouselItem key={index}>
+                                <Card>
+                                  <CardContent className="p-4 space-y-4">
+                                    <div className="space-y-2">
+                                      <Badge variant="outline">Ejemplo {index + 1}</Badge>
+                                      <div className="space-y-2">
+                                        <Code className="w-full p-3">{`Input: ${example.input}`}</Code>
+                                        <Code className="w-full p-3">{`Output: ${example.output}`}</Code>
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        <p>{example.explanation}</p>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                        </Carousel>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Test Cases Preview */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LucideCode className="h-5 w-5 text-primary" />
+                      Casos de Prueba
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[500px]">
+                      <div className="space-y-4">
+                        {form.watch("testCases").map((testCase, index) => (
+                          <div
+                            key={index}
+                            className="p-4 rounded-lg bg-muted/50 border border-border"
+                          >
+                            <div className="space-y-2">
+                              <Badge variant="outline">Test Case {index + 1}</Badge>
+                              <div className="space-y-2">
+                                <Code className="w-full p-3">{`Input: ${testCase.input}`}</Code>
+                                <Code className="w-full p-3">{`Expected Output: ${testCase.expectedOutput}`}</Code>
+                              </div>
+                              <Badge variant={testCase.visibility === "public" ? "secondary" : "default"}>
+                                {testCase.visibility}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

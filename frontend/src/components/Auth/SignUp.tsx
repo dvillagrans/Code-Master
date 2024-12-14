@@ -389,7 +389,7 @@ const SignUp = () => {
                 <Button
                   variant="link"
                   className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                  onClick={() => window.location.href = '/register' }
+                  onClick={() => window.location.href = '/signup' }
                 >
                   Sign in
                 </Button>

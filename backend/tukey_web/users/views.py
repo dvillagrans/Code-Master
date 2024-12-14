@@ -1,5 +1,6 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
@@ -8,35 +9,21 @@ from .serializers import CustomUserSerializer, CustomTokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import AllowAny
 from django.db.models import Avg, Sum, Count
 from django.shortcuts import render
 from users.models import CustomUser
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Max, Min
-from django.http import JsonResponse
-from django.http import JsonResponse
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
 import json
-from rest_framework import status
-from .models import CustomUser
-from .serializers import CustomUserSerializer
 from solutions.models import Solution
 from solutions.serializers import SolutionSerializer
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import CustomUser
 from .firebase import auth  # Asegúrate de tener tu configuración de Firebase
-from rest_framework_simplejwt.tokens import RefreshToken
+
+# Importar el decorador aquí
+from users.decorators import admin_required
 
 @csrf_exempt
 @api_view(['POST'])
@@ -310,3 +297,12 @@ class FirebaseAuthView(APIView):
             return Response({"error": "Invalid token"}, status=400)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
+
+class AdminOnlyView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    @admin_required
+    def get(self, request):
+        return Response({"message": "Welcome, admin!"})
+

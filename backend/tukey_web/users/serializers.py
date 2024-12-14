@@ -10,36 +10,19 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # Agregar campos personalizados al token
-        token['email'] = user.email
+        # Agregar claims personalizados al token
         token['username'] = user.username
-        token['nivel'] = user.nivel
-        token['puntos_experiencia'] = user.puntos_experiencia
+        token['email'] = user.email
+        token['role'] = user.role  # Asegúrate de que tu modelo tenga este campo
         return token
 
     def validate(self, attrs):
-        login = attrs.get("username")  # Cambiar el nombre del campo en el formulario
-        password = attrs.get("password")
-
-        # Intentar autenticar por correo o nombre de usuario
-        user = authenticate(username=login, password=password)
-        if not user:
-            user = authenticate(email=login, password=password)  # Intentar por correo
-            if not user:
-                raise AuthenticationFailed("Credenciales inválidas. Verifica tu usuario o correo y contraseña.")
-
-        # Verificar si el usuario está activo
-        if not user.is_active:
-            raise AuthenticationFailed("Esta cuenta está deshabilitada.")
-
-        # Generar el token
-        token = super().validate(attrs)
-        token['email'] = user.email
-        token['username'] = user.username
-        token['nivel'] = user.nivel
-        token['puntos_experiencia'] = user.puntos_experiencia
-
-        return token
+        data = super().validate(attrs)
+        # Agregar datos adicionales a la respuesta
+        data['username'] = self.user.username
+        data['email'] = self.user.email
+        data['role'] = self.user.role
+        return data
 
 # Serializer para la creación y manejo de usuarios
 class CustomUserSerializer(serializers.ModelSerializer):

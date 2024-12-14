@@ -1,9 +1,11 @@
 import { useTheme } from "../../context/ThemeContext";
 import { Toaster } from 'sonner';
 import { BsHouseDoor, BsCode, BsPerson, BsCalendar } from "react-icons/bs";
-import { Sun, Moon, Sparkles } from "lucide-react";
+import { Sun, Moon, Sparkles, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
+import Cookies from 'js-cookie';
+import { toast } from 'sonner';
 
 interface NavLinkProps {
   href: string;
@@ -45,6 +47,23 @@ const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
 const Header = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
+  const handleLogout = () => {
+    try {
+      // Limpiar todas las cookies
+      Cookies.remove('access_token');
+      Cookies.remove('refresh_token');
+      Cookies.remove('user_data');
+      
+      // Mostrar mensaje de éxito
+      toast.success('Sesión cerrada correctamente');
+      
+      // Redirigir al login
+      window.location.href = '/';
+    } catch (error) {
+      toast.error('Error al cerrar sesión');
+    }
+  };
+
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"))
   }
@@ -71,14 +90,25 @@ const Header = () => {
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
             <NavLink href="/dashboard" icon={BsPerson}>Profile</NavLink>
             
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={toggleTheme}
-              className="ml-2"
-            >
-              {theme === "light" ? <Moon /> : <Sun />}
-            </Button>
+            <div className="flex items-center space-x-2 border-l pl-6 ml-2 border-gray-200 dark:border-gray-700">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={toggleTheme}
+              >
+                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+              
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            </div>
           </nav>
         </div>
       </div>
