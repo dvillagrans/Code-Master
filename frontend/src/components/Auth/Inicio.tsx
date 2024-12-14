@@ -30,6 +30,8 @@ import { auth } from "@/lib/firebaseConfig";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
 // Definir el esquema de validación
 const schema = yup.object({
   username: yup
@@ -52,7 +54,7 @@ const loginWithGitHub = async () => {
     const result = await signInWithPopup(auth, provider);
     const token = await result.user.getIdToken();
 
-    const response = await fetch("http://127.0.0.1:8000/users/third-party-login/", {
+    const response = await fetch(`${API_URL}/users/third-party-login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
@@ -95,7 +97,7 @@ const loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider);
     const idToken = await result.user.getIdToken();
 
-    const response = await fetch("http://127.0.0.1:8000/users/firebase-auth/", {
+    const response = await fetch(`${API_URL}/users/firebase-auth/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -151,7 +153,7 @@ const loginWithGoogle = async () => {
   
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/users/token/",
+        `${API_URL}/users/token/`,
         {
           username: data.username,
           password: data.password,

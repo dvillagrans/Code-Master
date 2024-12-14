@@ -125,8 +125,8 @@ const ProblemsList = () => {
   // Updated difficulties with icon-based badges
   const difficulties = [
     { name: "All", variant: "secondary" },
-    { name: "Easy", variant: "secondary" },
-    { name: "Medium", variant: "default" },
+    { name: "Easy", variant: "success" },
+    { name: "Medium", variant: "warning" },
     { name: "Hard", variant: "destructive" }
   ]
 
@@ -250,11 +250,15 @@ const ProblemsList = () => {
   })
 
   const getDifficultyVariant = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy": return "secondary"
-      case "Medium": return "default"
-      case "Hard": return "destructive"
-      default: return "secondary"
+    switch (difficulty.toLowerCase()) {
+      case "easy": 
+        return "success"      // Verde
+      case "medium": 
+        return "warning"      // Amarillo
+      case "hard": 
+        return "destructive"  // Rojo
+      default: 
+        return "secondary"
     }
   }
 
@@ -354,30 +358,28 @@ const ProblemsList = () => {
 
                 <Separator />
 
-                {/* Category Select */}
+                {/* Category Grid */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Category</Label>
-                  <Select 
-                    value={selectedCategory} 
-                    onValueChange={setSelectedCategory}
-                  >
-                    <SelectTrigger className="w-full bg-background">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {categoriesWithIcons.map((category) => (
-                        <SelectItem 
-                          key={category.name} 
-                          value={category.name} 
-                          className="flex items-center"
-                        >
-                          <category.icon className="mr-2 h-4 w-4 text-primary" />
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {categoriesWithIcons.map((category) => (
+                      <Button
+                        key={category.name}
+                        variant={selectedCategory === category.name ? "default" : "outline"}
+                        className={cn(
+                          "flex items-center justify-start gap-2 h-auto py-2 px-3 transition-all",
+                          selectedCategory === category.name && "bg-primary text-primary-foreground",
+                          "hover:bg-accent hover:text-accent-foreground"
+                        )}
+                        onClick={() => setSelectedCategory(category.name)}
+                      >
+                        <category.icon className="h-4 w-4" />
+                        <span className="text-sm truncate">{category.name}</span>
+                      </Button>
+                    ))}
+                  </div>
                 </div>
+
               </div>
             </ScrollArea>
           </div>

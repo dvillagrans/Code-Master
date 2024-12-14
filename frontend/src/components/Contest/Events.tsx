@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { BsHouseDoor, BsCode, BsPerson, BsCalendarEvent, BsFilter, BsClock, BsGeoAlt } from "react-icons/bs";
 import Header from "../Common/Header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 const EventsPage = () => {
   const [events] = useState([
@@ -38,81 +44,103 @@ const EventsPage = () => {
 
   const [filter, setFilter] = useState("all");
 
+  const getCategoryColor = (category: string) => {
+    switch (category.toLowerCase()) {
+      case "competition":
+        return "success";
+      case "hackathon":
+        return "warning";
+      case "workshop":
+        return "default";
+      default:
+        return "secondary";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-6 py-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-12">
-            <div className="space-y-2 mb-6 md:mb-0">
-              <h1 className="text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="space-y-2">
+              <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
                 Upcoming Events
               </h1>
-              <p className="text-gray-600">Discover and join upcoming coding competitions and workshops</p>
+              <p className="text-muted-foreground">
+                Discover and join upcoming coding competitions and workshops
+              </p>
             </div>
             
-            <div className="flex items-center space-x-4 bg-white p-2 rounded-full shadow-sm border">
-              <BsFilter className="text-blue-600" size={24} />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-gray-700 font-medium"
-              >
-                <option value="all">All Events</option>
-                <option value="competition">Competitions</option>
-                <option value="hackathon">Hackathons</option>
-                <option value="workshop">Workshops</option>
-              </select>
-            </div>
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter events" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Events</SelectItem>
+                <SelectItem value="competition">Competitions</SelectItem>
+                <SelectItem value="hackathon">Hackathons</SelectItem>
+                <SelectItem value="workshop">Workshops</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Separator />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div key={event.id} 
-                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                <div className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+              <Card 
+                key={event.id}
+                className="group overflow-hidden transition-all duration-300 hover:shadow-lg"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-background/20 z-10" />
                   <img
                     src={event.image}
                     alt={event.title}
-                    className="w-full h-56 object-cover transform group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1516321165247-4aa89a48be28";
                     }}
                   />
-                  <div className="absolute bottom-4 left-4 right-4 z-20">
-                    <span className="inline-block px-3 py-1 bg-white/90 backdrop-blur-sm text-blue-600 rounded-full text-sm font-medium">
+                  <div className="absolute bottom-4 left-4 z-20">
+                    <Badge variant={getCategoryColor(event.category)}>
                       {event.category}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
 
-                <div className="p-6 space-y-4">
-                  <h2 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <CardHeader>
+                  <CardTitle className="group-hover:text-primary transition-colors">
                     {event.title}
-                  </h2>
-                  
-                  <p className="text-gray-600 line-clamp-2">{event.description}</p>
-                  
-                  <div className="space-y-3 pt-2">
-                    <div className="flex items-center text-gray-500">
-                      <BsClock className="mr-2 text-blue-500" />
+                  </CardTitle>
+                  <p className="text-muted-foreground line-clamp-2">
+                    {event.description}
+                  </p>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center text-muted-foreground">
+                      <BsClock className="mr-2 text-primary" />
                       <span className="text-sm">{event.date} at {event.time}</span>
                     </div>
-                    <div className="flex items-center text-gray-500">
-                      <BsGeoAlt className="mr-2 text-blue-500" />
+                    <div className="flex items-center text-muted-foreground">
+                      <BsGeoAlt className="mr-2 text-primary" />
                       <span className="text-sm">{event.location}</span>
                     </div>
                   </div>
 
-                  <button className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-xl 
-                    hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-medium flex items-center justify-center space-x-2">
-                    <BsCalendarEvent />
-                    <span>Register Now</span>
-                  </button>
-                </div>
-              </div>
+                  <Button 
+                    className="w-full group" 
+                    variant="default"
+                  >
+                    <BsCalendarEvent className="mr-2 group-hover:animate-pulse" />
+                    Register Now
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
