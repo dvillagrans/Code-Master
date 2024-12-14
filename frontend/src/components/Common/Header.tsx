@@ -1,7 +1,7 @@
 import { useTheme } from "../../context/ThemeContext";
 import { Toaster } from 'sonner';
 import { BsHouseDoor, BsCode, BsCalendar, BsPerson } from "react-icons/bs";
-import { Sun, Moon, Sparkles, LogOut, User, Settings } from "lucide-react";
+import { Sun, Moon, Sparkles, LogOut, User, Settings, Flame } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
+import { cn } from "@/lib/utils";
 
 interface NavLinkProps {
   href: string;
@@ -23,12 +24,13 @@ interface NavLinkProps {
   children: React.ReactNode;
 }
 
-// Agregar esta interfaz para los datos del usuario
+// Actualizar la interfaz UserData
 interface UserData {
   name: string;
   last_name: string;
   email?: string;
   avatar?: string;
+  racha: number;
 }
 
 const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
@@ -62,8 +64,27 @@ const NavLink = ({ href, icon: Icon, children }: NavLinkProps) => {
   );
 };
 
+// Agregar el componente StreakIndicator
+const StreakIndicator = ({ streak }: { streak: number }) => {
+  const isActive = streak > 0;
+  
+  if (!isActive) return null;
+  
+  return (
+    <div className="absolute -right-7 top-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-yellow-400 rounded-full p-[2px] shadow-lg group">
+      <div className="bg-background dark:bg-gray-800 rounded-full p-1.5 relative">
+        <Flame className="h-4 w-4 text-orange-500 animate-pulse" />
+        <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gradient-to-r from-orange-500 to-yellow-400 rounded-full text-xs font-bold text-white shadow-lg whitespace-nowrap">
+          {streak} días seguidos
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UserMenu = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const DEFAULT_AVATAR = "https://i.ibb.co/5Wy9XrP/default-avatar.png"; // URL de avatar por defecto
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -104,16 +125,21 @@ const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent pr-8">
+          <Avatar className="h-full w-full">
             <AvatarImage 
-              src={userData?.avatar || "/avatars/01.png"} 
+              src={userData?.avatar || DEFAULT_AVATAR} 
               alt={userData?.name || "Usuario"} 
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = DEFAULT_AVATAR;
+              }}
             />
             <AvatarFallback>
               {userData ? userData.name.charAt(0) + userData.last_name.charAt(0) : "UN"}
             </AvatarFallback>
           </Avatar>
+          <StreakIndicator streak={userData?.racha || 0} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -125,6 +151,12 @@ const UserMenu = () => {
             <p className="text-xs leading-none text-muted-foreground">
               {userData?.email || 'Cargando...'}
             </p>
+            {userData?.racha && userData.racha > 0 && (
+              <p className="text-xs font-medium text-orange-500 flex items-center gap-1 mt-1">
+                <Flame className="h-3 w-3" />
+                Racha de {userData.racha} días
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
