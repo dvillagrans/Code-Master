@@ -45,7 +45,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Crear directorio docs si no existe
+          mkdir -p docs
+
+          # Crear o actualizar CHANGELOG
           echo "## 📝 Resumen de Cambios" >> docs/CHANGELOG.md
           echo "### ${{ github.sha }}" >> docs/CHANGELOG.md
           echo "${{ env.summary }}" >> docs/CHANGELOG.md
           echo "" >> docs/CHANGELOG.md
+
+          # Hacer commit de los cambios si hay modificaciones
+          if git diff --exit-code docs/CHANGELOG.md; then
+            echo "No hay cambios en CHANGELOG"
+          else
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add docs/CHANGELOG.md
+            git commit -m "📝 Actualizar CHANGELOG"
+            git push
+          fi
