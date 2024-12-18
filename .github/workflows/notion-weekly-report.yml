@@ -1,0 +1,38 @@
+name: Notion Weekly Report
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Lunes a las 9 AM
+
+jobs:
+  weekly_report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Weekly Report
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID1: ${{ secrets.NOTION_DATABASE_ID1 }}
+        run: |
+          # Obtener el rango de fechas
+          START_DATE=$(date -d "last monday -7 days" +%Y-%m-%d)
+          END_DATE=$(date -d "last monday" +%Y-%m-%d)
+
+          # Generar reporte usando datos de commits
+          NUM_COMMITS=$(git rev-list --count HEAD --since=$START_DATE --until=$END_DATE)
+          NUM_AUTHORS=$(git shortlog -s --since=$START_DATE --until=$END_DATE | wc -l)
+
+          # Crear la entrada en Notion
+          curl -X POST 'https://api.notion.com/v1/pages' \
+          -H "Authorization: Bearer $NOTION_API_KEY" \
+          -H "Content-Type: application/json" \
+          -H "Notion-Version: 2022-06-28" \
+          --data '{
+            "parent": { "database_id": "'"$NOTION_DATABASE_ID1"'" },
+            "properties": {
+              "📝 Reporte Semanal": { "title": [{ "text": { "content": "Reporte del '"$START_DATE"' al '"$END_DATE"'" }}] },
+              "🔢 Commits Totales": { "number": '"$NUM_COMMITS"' },
+              "👩‍💻 Autores Activos": { "number": '"$NUM_AUTHORS"' },
+              "📅 Fecha de Creación": { "date": { "start": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'" } }
+            }
+          }'
