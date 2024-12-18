@@ -21,13 +21,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Eye, EyeOff } from 'lucide-react';
-import { Toaster, toast } from 'sonner';
 import Cookies from 'js-cookie';
 import { motion } from "framer-motion";
 import { GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebaseConfig";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { toast } from 'sonner'; // Reemplaza las importaciones anteriores de toast
+import SideContent from './SideContent-Inicio';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -118,7 +119,7 @@ const loginWithGoogle = async () => {
       toast.success(`¡Bienvenido, ${result.user.displayName || result.user.email}!`);
       handleRedirect(data.role); // Usar la nueva función de redirección
     } else {
-      // Manejamos diferentes tipos de errores del backend
+      // Manejo de errores del backend
       switch (data.detail) {
         case "google_required":
           toast.error("Tu cuenta está vinculada con Google. Por favor, usa Google para iniciar sesión.");
@@ -130,21 +131,22 @@ const loginWithGoogle = async () => {
           toast.error("Ya existe una cuenta con este correo electrónico.");
           break;
         default:
-          toast.error(data.detail || "Error al iniciar sesión con Google");
+          toast.error("Error al iniciar sesión. Por favor, intenta de nuevo.");
       }
     }
-  } catch (error: any) {
-    // Manejamos errores específicos de Firebase
-    if (error.code === 'auth/popup-closed-by-user') {
-      toast.error("Inicio de sesión cancelado por el usuario");
-    } else if (error.code === 'auth/account-exists-with-different-credential') {
+  } catch (error) {
+    // Manejo de errores específicos de Firebase
+    if ((error as any).code === "auth/popup-closed-by-user") {
+      toast.error("Inicio de sesión cancelado por el usuario.");
+    } else if ((error as any).code === "auth/account-exists-with-different-credential") {
       toast.error("Ya existe una cuenta con este correo. Intenta con otro método de inicio de sesión.");
     } else {
       console.error("Error en Google Login:", error);
-      toast.error("Ocurrió un error durante el inicio de sesión con Google");
+      toast.error("Ocurrió un error durante el inicio de sesión con Google.");
     }
   }
 };
+
 
   const form = useForm<FormData>({
     resolver: yupResolver(schema),
@@ -163,7 +165,7 @@ const loginWithGoogle = async () => {
         break;
       case 'user':
       default:
-        window.location.href = '/dashboard';
+        window.location.href = '/problems';
         break;
     }
   };
@@ -172,79 +174,70 @@ const loginWithGoogle = async () => {
     setIsLoading(true);
   
     try {
+      console.log('Enviando solicitud de inicio de sesión:', {
+        username: data.username,
+        password: data.password,
+      });
+  
       const response = await axios.post<LoginResponse>(
         `${API_URL}/users/token/`,
         {
           username: data.username,
           password: data.password,
         },
-        { withCredentials: true }
+        { 
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
   
-      // Guardar los tokens en cookies
-      Cookies.set("access_token", response.data.access, {
-        httpOnly: false,
-        secure: true,
-        sameSite: "Lax",
-        expires: 1,
-      });
+      console.log('Respuesta del servidor:', response.data);
   
-      Cookies.set("refresh_token", response.data.refresh, {
-        httpOnly: false,
-        secure: true,
-        sameSite: "Lax",
-        expires: 7,
-      });
+      if (response.data.access && response.data.refresh) {
+        // Guardar los tokens en cookies
+        Cookies.set("access_token", response.data.access, {
+          expires: 1
+        });
   
-      // Guardar información del usuario incluyendo el rol
-      Cookies.set('user_data', JSON.stringify({
-        username: response.data.username,
-        email: response.data.email,
-        role: response.data.role
-      }), {
-        expires: 1,
-        secure: true,
-        sameSite: 'Lax'
-      });
+        Cookies.set("refresh_token", response.data.refresh, {
+          expires: 7
+        });
   
-      toast.success(`¡Bienvenido de nuevo, ${response.data.username}!`);
-      setIsLoading(false);
+        // Guardar información del usuario
+        const userData = {
+          username: response.data.username,
+          email: response.data.email,
+          role: response.data.role
+        };
   
-      // Redireccionar según el rol
-      handleRedirect(response.data.role);
-      
-    } catch (error: any) {
-      setIsLoading(false);
-      
-      if (error.response) {
-        switch (error.response.data.detail) {
-          case "invalid_credentials":
-            toast.error("Credenciales inválidas. Verifica tu usuario y contraseña.");
-            break;
-          case "account_disabled":
-            toast.error("Tu cuenta está desactivada. Contacta al soporte.");
-            break;
-          case "social_auth_required":
-            toast.error("Esta cuenta usa autenticación social. Por favor, inicia sesión con Google o GitHub.");
-            break;
-          default:
-            toast.error(error.response.data.detail || "Error al iniciar sesión");
-        }
-      } else {
-        toast.error("Error de conexión. Por favor, intenta más tarde.");
+        Cookies.set('user_data', JSON.stringify(userData), {
+          expires: 1
+        });
+  
+        toast.success(`¡Bienvenido de nuevo, ${response.data.username}!`);
+  
+        console.log('Tokens guardados:', {
+          access: Cookies.get('access_token'),
+          refresh: Cookies.get('refresh_token'),
+          userData: Cookies.get('user_data')
+        });
+  
+        handleRedirect(response.data.role);
       }
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      setIsLoading(false);
+  
+      toast.error(error.response?.data?.detail || "Error al iniciar sesión");
+    } finally {
+      setIsLoading(false);
     }
   };
   
 
   return (
     <>
-      <Toaster 
-        position="top-right"
-        expand={false}
-        richColors
-        closeButton
-      />
       <div className="min-h-screen w-full flex bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         {/* Login Section */}
         <div className="w-full lg:w-5/12 p-8 lg:p-12 flex items-center justify-center">
@@ -263,7 +256,7 @@ const loginWithGoogle = async () => {
                     </svg>
                   </div>
                   <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                    CodeMaster Pro
+                    CodeMaster
                   </span>
                 </div>
                 <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
@@ -396,9 +389,9 @@ const loginWithGoogle = async () => {
                     onClick={loginWithGitHub}
                   >
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.377 0-2.332-1.26-3.428-2.8-1.287-1.82-2.323-4.63-2.323-7.28 0-4.28 2.797-6.55 5.552-6.55 1.448 0 2.675.95 3.6.95.865 0 2.222-1.01 3.902-1.01.613 0 2.886.06 4.374 2.19-.13.09-2.383 1.37-2.383 4.19 0 3.26 2.854 4.42 2.955 4.45z"/>
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                     </svg>
-                    Apple
+                    GitHub
                   </Button>
                 </div>
                 
@@ -416,85 +409,11 @@ const loginWithGoogle = async () => {
             </Card>
           </motion.div>
         </div>
-
-        <div className="hidden lg:block lg:w-7/12 bg-gradient-to-br from-blue-500 to-purple-500 p-12">
-          <div className="h-full flex flex-col justify-center items-center text-white">
-            <h1 className="text-4xl font-bold mb-4">Welcome to CodeMaster Pro</h1>
-            <p className="text-xl mb-12 text-white/90 text-center max-w-2xl">
-              Your journey to becoming a better developer starts here
-            </p>
-
-            {/* Nueva sección de características */}
-            <div className="w-full max-w-3xl space-y-8">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Smart Learning Path</h3>
-                    <p className="text-white/80">Personalized learning experience that adapts to your skill level and goals</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Community Driven</h3>
-                    <p className="text-white/80">Connect with other developers, share knowledge and grow together</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 }}
-                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl"
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2">Real-World Projects</h3>
-                    <p className="text-white/80">Practice with actual projects and build your professional portfolio</p>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Indicadores */}
-            <div className="flex space-x-2 mt-12">
-              <div className="w-2 h-2 rounded-full bg-white"></div>
-              <div className="w-2 h-2 rounded-full bg-white/50"></div>
-              <div className="w-2 h-2 rounded-full bg-white/50"></div>
-            </div>
-          </div>
-        </div>
+        {/* Image Section */}
+          <SideContent  />
       </div>
     </>
   );
-};
+}
 
 export default InicioS;

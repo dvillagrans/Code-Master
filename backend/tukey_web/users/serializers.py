@@ -26,57 +26,50 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 # Serializer para la creación y manejo de usuarios
 class CustomUserSerializer(serializers.ModelSerializer):
-    confirmPassword = serializers.CharField(write_only=True)
-    terms = serializers.BooleanField(required=True)
+    confirmPassword = serializers.CharField(write_only=True)  # Cambiado de confirm_password a confirmPassword
+    terms = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = [
-            'name',
-            'last_name',
-            'email', 
-            'username', 
-            'password', 
-            'confirmPassword', 
-            'terms',
-            'id',  # ID del usuario
-            'name',  # Nombre
-            'last_name',  # Apellido
-            'email',  # Correo electrónico
-            'username',  # Nombre de usuario
-            'nivel',  # Nivel del usuario
-            'puntos_experiencia',  # Puntos de experiencia
-            'racha',  # Racha actual
-            'ejercicios_completados',  # Ejercicios completados
-            'avatar',  # Campo para la foto/avatar del usuario
-            'ranking'  # Ranking del usuario
-        ]
+        fields = ('username', 'email', 'password', 'confirmPassword', 'name', 'last_name', 'terms')
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
         }
 
     def validate(self, data):
-        # Validar que las contraseñas coincidan
-        if data['password'] != data.pop('confirmPassword'):
-            raise serializers.ValidationError({"confirmPassword": "Las contraseñas no coinciden."})
+        print("Validating data:", data)  # Debug log
         
-        # Validar que se acepten los términos
-        if not data.get('terms'):
-            raise serializers.ValidationError({"terms": "Debes aceptar los términos y condiciones."})
+        password = data.get('password')
+        confirmPassword = data.get('confirmPassword')  # Cambiado aquí también
+
+        if not password:
+            raise serializers.ValidationError({'password': 'Password is required'})
         
+        if not confirmPassword:  # Y aquí
+            raise serializers.ValidationError({'confirmPassword': 'Please confirm your password'})
+
+        if password != confirmPassword:  # Y aquí
+            raise serializers.ValidationError({'confirmPassword': 'Passwords do not match'})
+
+        if not data.get('terms', False):
+            raise serializers.ValidationError({'terms': 'Debe aceptar los términos y condiciones'})
+
         return data
 
     def create(self, validated_data):
-        # Eliminar campos que no están en el modelo
-        validated_data.pop('terms')
+        print("Creating user with data:", validated_data)  # Debug log
         
-        # Crear usuario con contraseña hasheada
+        # Remover campos adicionales
+        confirmPassword = validated_data.pop('confirmPassword', None)  # Cambiado aquí
+        terms = validated_data.pop('terms', None)
+        
         user = CustomUser.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            name=validated_data['name'],
-            last_name=validated_data['last_name']
+            name=validated_data.get('name', ''),
+            last_name=validated_data.get('last_name', ''),
+            terms=terms
         )
         return user
 

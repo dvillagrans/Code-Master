@@ -194,10 +194,12 @@ class CustomUser(AbstractUser):
         """
         Actualiza el ranking del usuario basado en sus puntos de experiencia.
         """
-        self.ranking = CustomUser.objects.filter(
+        ranking = CustomUser.objects.filter(
             puntos_experiencia__gt=self.puntos_experiencia
         ).count() + 1
-        self.save()
+        # Actualizar directamente el ranking en la base de datos
+        CustomUser.objects.filter(pk=self.pk).update(ranking=ranking)
+
 
     def get_ejercicios_ultimos_dias(self):
         """

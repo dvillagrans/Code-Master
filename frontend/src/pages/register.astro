@@ -1,6 +1,7 @@
 ---
 import "@/styles/globals.css";
-import Signin from "../components/Auth/SignUp.tsx";
+import Layout from "../layouts/Layout.astro";
+import SignUp from "../components/Auth/SignUp";
 ---
 
 <!doctype html>
@@ -11,6 +12,8 @@ import Signin from "../components/Auth/SignUp.tsx";
     <title>Landing Page - Club de Ciencia de Datos</title>
   </head>
   <body class="flex flex-col min-h-screen">
-    <Signin client:load />
+    <Layout title="Sign Up - CodeMaster Pro">
+      <SignUp client:load />
+    </Layout>
   </body>
 </html>

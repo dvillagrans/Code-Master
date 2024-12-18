@@ -112,27 +112,61 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print("Registration request data:", request.data)  # Debug log
+        
         serializer = CustomUserSerializer(data=request.data)
-        if serializer.is_valid():
+        
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
-
-            response = Response({
+            
+            response_data = {
+                "success": True,
                 "message": "Usuario registrado exitosamente",
-                "user_id": user.id,
-                "username": user.username,
-                "tokens": {
-                    "refresh": str(refresh),
-                    "access": str(refresh.access_token)
-                }
-            }, status=status.HTTP_201_CREATED)
-
-            # Configurar cookies
-            set_cookie(response, 'access_token', str(refresh.access_token), max_age=3600)
-            set_cookie(response, 'refresh_token', str(refresh), max_age=604800)
-
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "name": user.name,
+                    "last_name": user.last_name,
+                    "role": user.role
+                },
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
+            }
+            
+            response = Response(response_data, status=status.HTTP_201_CREATED)
+            
+            # Set cookies
+            response.set_cookie(
+                'access_token',
+                str(refresh.access_token),
+                max_age=3600,
+                httponly=True,
+                samesite='Lax'
+            )
+            response.set_cookie(
+                'refresh_token',
+                str(refresh),
+                max_age=604800,
+                httponly=True,
+                samesite='Lax'
+            )
+            
             return response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            print(f"Registration error: {str(e)}")  # Debug log
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 # Vista de conjunto de usuarios (CRUD)
@@ -305,4 +339,20 @@ class AdminOnlyView(APIView):
     @admin_required
     def get(self, request):
         return Response({"message": "Welcome, admin!"})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_username(request):
+    username = request.data.get('username')
+    if not username:
+        return Response(
+            {'error': 'Username is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    exists = CustomUser.objects.filter(username=username).exists()
+    return Response(
+        {'exists': exists},
+        status=status.HTTP_200_OK
+    )
 
