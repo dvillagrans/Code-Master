@@ -19,7 +19,7 @@ jobs:
       - name: Log Commit to Notion
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DB_COMMITS }}
         run: |
           # Obtén información del último commit
           COMMIT_MESSAGE=$(git log -1 --pretty=%B)

@@ -12,7 +12,7 @@ jobs:
       - name: Generate Weekly Report
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID1: ${{ secrets.NOTION_DATABASE_ID1 }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DB_REPORTS }}
         run: |
           # Obtener el rango de fechas
           START_DATE=$(date -d "last monday -7 days" +%Y-%m-%d)

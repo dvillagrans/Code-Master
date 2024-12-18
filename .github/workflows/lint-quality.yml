@@ -23,7 +23,7 @@ jobs:
       - name: Post Linter Results to Notion
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DB_QUALITY }}
         run: |
           RESULTS=$(cat lint-results.txt)
           curl -X POST 'https://api.notion.com/v1/pages' \
