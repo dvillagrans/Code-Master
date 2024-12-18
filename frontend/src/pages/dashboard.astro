@@ -1,15 +1,27 @@
 ---
-import "@/styles/globals.css";
 import Layout from "../layouts/Layout.astro";
 import Dash from "../components/Dash";
+import "@/styles/globals.css";
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Landing Page - Club de Ciencia de Datos</title>
-  </head>
-  <Dash client:load />
-</html>
+<Layout title="Dashboard - CodeMaster Pro">
+  <div id="theme-root">
+    <Dash client:only="react" />
+  </div>
+</Layout>
+
+<script>
+  // Manejar el tema inicial y los cambios
+  document.addEventListener("DOMContentLoaded", () => {
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem("theme") || "light";
+    root.classList.toggle("dark", savedTheme === "dark");
+
+    // Escuchar cambios en el tema
+    window.addEventListener("theme-change", (e) => {
+      const isDark = (e as CustomEvent).detail.isDark;
+      root.classList.toggle("dark", isDark);
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  });
+</script>

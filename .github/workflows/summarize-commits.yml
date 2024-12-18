@@ -17,12 +17,16 @@ jobs:
       - name: Get changes
         id: changes
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --pretty=format:"%s%n%b")
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            COMMITS=$(git log '${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}' --pretty=format:"%s%n%b")
           else
             COMMITS=$(git log -1 --pretty=format:"%s%n%b")
           fi
-          echo "commits=$COMMITS" >> $GITHUB_ENV
+          # Escapar caracteres especiales
+          COMMITS="${COMMITS//'%'/'%25'}"
+          COMMITS="${COMMITS//$'\n'/'%0A'}"
+          COMMITS="${COMMITS//$'\r'/'%0D'}"
+          echo "commits=$COMMITS" >> "$GITHUB_OUTPUT"
 
       - name: Generate Summary
         id: summary
@@ -36,10 +40,14 @@ jobs:
               "model": "gpt-3.5-turbo",
               "messages": [
                 {"role": "system", "content": "Genera un resumen conciso de los siguientes cambios"},
-                {"role": "user", "content": "'"${{ env.commits }}"'"}
+                {"role": "user", "content": "${{ steps.changes.outputs.commits }}"}
               ]
             }' | jq -r '.choices[0].message.content')
-          echo "summary=$SUMMARY" >> $GITHUB_ENV
+          # Escapar caracteres especiales
+          SUMMARY="${SUMMARY//'%'/'%25'}"
+          SUMMARY="${SUMMARY//$'\n'/'%0A'}"
+          SUMMARY="${SUMMARY//$'\r'/'%0D'}"
+          echo "summary=$SUMMARY" >> "$GITHUB_OUTPUT"
 
       - name: Update Documentation
         env:
@@ -51,7 +59,7 @@ jobs:
           # Crear o actualizar CHANGELOG
           echo "## 📝 Resumen de Cambios" >> docs/CHANGELOG.md
           echo "### ${{ github.sha }}" >> docs/CHANGELOG.md
-          echo "${{ env.summary }}" >> docs/CHANGELOG.md
+          echo "${{ steps.summary.outputs.summary }}" >> docs/CHANGELOG.md
           echo "" >> docs/CHANGELOG.md
 
           # Hacer commit de los cambios si hay modificaciones

@@ -2,7 +2,7 @@ name: Lint Code Quality
 
 on:
   pull_request:
-    types: [opened, synchronize] # Se ejecuta al abrir o actualizar un PR
+    types: [opened, synchronize]
     branches:
       - main
       - diego
@@ -15,8 +15,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Create package.json if not exists
+        run: |
+          if [ ! -f package.json ]; then
+            echo '{
+              "name": "code-quality-check",
+              "version": "1.0.0",
+              "scripts": {
+                "lint": "eslint ."
+              },
+              "devDependencies": {
+                "eslint": "^8.0.0"
+              }
+            }' > package.json
+          fi
+
       - name: Install Dependencies
-        run: npm install # Cambia por el gestor de tu proyecto (pip, yarn, etc.)
+        run: npm install
 
       - name: Run Linter
         run: npm run lint > lint-results.txt || true
