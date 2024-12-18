@@ -1,0 +1,32 @@
+name: Clasificar Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analizar Issue
+        id: analyze
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          ANALYSIS=$(curl -X POST "https://api.openai.com/v1/chat/completions" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [
+                {"role": "system", "content": "Clasifica este issue en una de estas categorías: bug, feature, documentation, question"},
+                {"role": "user", "content": "${{ github.event.issue.title }}\n${{ github.event.issue.body }}"}
+              ]
+            }' | jq -r '.choices[0].message.content')
+          echo "label=$ANALYSIS" >> $GITHUB_ENV
+
+      - name: Añadir Etiqueta
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit ${{ github.event.issue.number }} --add-label "${{ env.label }}"

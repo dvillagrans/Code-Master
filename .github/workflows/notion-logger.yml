@@ -6,7 +6,7 @@ on:
       - main
       - diego
   pull_request:
-    types: [opened, closed]
+    types: [closed] # Solo cuando se cierra el PR
 
 jobs:
   log_to_notion:

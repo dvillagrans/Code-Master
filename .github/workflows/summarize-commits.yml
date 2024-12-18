@@ -1,0 +1,51 @@
+name: Resumir Commits y PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main, master]
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --pretty=format:"%s%n%b")
+          else
+            COMMITS=$(git log -1 --pretty=format:"%s%n%b")
+          fi
+          echo "commits=$COMMITS" >> $GITHUB_ENV
+
+      - name: Generate Summary
+        id: summary
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          SUMMARY=$(curl -X POST "https://api.openai.com/v1/chat/completions" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [
+                {"role": "system", "content": "Genera un resumen conciso de los siguientes cambios"},
+                {"role": "user", "content": "'"${{ env.commits }}"'"}
+              ]
+            }' | jq -r '.choices[0].message.content')
+          echo "summary=$SUMMARY" >> $GITHUB_ENV
+
+      - name: Update Documentation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## 📝 Resumen de Cambios" >> docs/CHANGELOG.md
+          echo "### ${{ github.sha }}" >> docs/CHANGELOG.md
+          echo "${{ env.summary }}" >> docs/CHANGELOG.md
+          echo "" >> docs/CHANGELOG.md

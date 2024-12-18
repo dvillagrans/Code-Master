@@ -28,7 +28,7 @@ jobs:
           -H "Content-Type: application/json" \
           -H "Notion-Version: 2022-06-28" \
           --data '{
-            "parent": { "database_id": "'"$NOTION_DATABASE_ID1"'" },
+            "parent": { "database_id": "'"$NOTION_DATABASE_ID"'" },
             "properties": {
               "📝 Reporte Semanal": { "title": [{ "text": { "content": "Reporte del '"$START_DATE"' al '"$END_DATE"'" }}] },
               "🔢 Commits Totales": { "number": '"$NUM_COMMITS"' },

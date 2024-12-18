@@ -1,0 +1,81 @@
+name: Generar Reportes
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Ejecutar cada domingo a medianoche
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  generate_report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Recopilar Estadísticas
+        id: stats
+        run: |
+          # Estadísticas de commits
+          COMMITS_WEEK=$(git log --since="1 week ago" --oneline | wc -l)
+          ACTIVE_AUTHORS=$(git log --since="1 week ago" --format="%aN" | sort -u | wc -l)
+
+          # Estadísticas de PRs
+          PRS=$(gh pr list --state all --json number,title,state,createdAt --created "1 week ago.." | jq length)
+
+          # Estadísticas de Issues
+          ISSUES=$(gh issue list --state all --json number,title,state,createdAt --created "1 week ago.." | jq length)
+
+          # Guardar estadísticas
+          echo "commits_week=$COMMITS_WEEK" >> $GITHUB_ENV
+          echo "authors=$ACTIVE_AUTHORS" >> $GITHUB_ENV
+          echo "prs=$PRS" >> $GITHUB_ENV
+          echo "issues=$ISSUES" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generar Resumen IA
+        id: ai_summary
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          STATS="Commits esta semana: ${{ env.commits_week }}
+          Autores activos: ${{ env.authors }}
+          PRs nuevos: ${{ env.prs }}
+          Issues nuevos: ${{ env.issues }}"
+
+          SUMMARY=$(curl -X POST "https://api.openai.com/v1/chat/completions" \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "gpt-3.5-turbo",
+              "messages": [
+                {"role": "system", "content": "Genera un resumen ejecutivo basado en estas estadísticas del proyecto"},
+                {"role": "user", "content": "'"$STATS"'"}
+              ]
+            }' | jq -r '.choices[0].message.content')
+          echo "summary=$SUMMARY" >> $GITHUB_ENV
+
+      - name: Crear Reporte
+        run: |
+          REPORT_DATE=$(date +"%Y-%m-%d")
+          mkdir -p reports
+
+          echo "# 📊 Reporte Semanal ($REPORT_DATE)" > "reports/weekly-$REPORT_DATE.md"
+          echo "" >> "reports/weekly-$REPORT_DATE.md"
+          echo "## 📝 Resumen Ejecutivo" >> "reports/weekly-$REPORT_DATE.md"
+          echo "${{ env.summary }}" >> "reports/weekly-$REPORT_DATE.md"
+          echo "" >> "reports/weekly-$REPORT_DATE.md"
+          echo "## 📈 Estadísticas" >> "reports/weekly-$REPORT_DATE.md"
+          echo "* 🔄 Commits: ${{ env.commits_week }}" >> "reports/weekly-$REPORT_DATE.md"
+          echo "* 👥 Autores activos: ${{ env.authors }}" >> "reports/weekly-$REPORT_DATE.md"
+          echo "* 🔍 PRs nuevos: ${{ env.prs }}" >> "reports/weekly-$REPORT_DATE.md"
+          echo "* 📌 Issues nuevos: ${{ env.issues }}" >> "reports/weekly-$REPORT_DATE.md"
+
+      - name: Commit y Push Reporte
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add reports/
+          git commit -m "📊 Actualización del reporte semanal"
+          git push

@@ -2,6 +2,7 @@ name: Lint Code Quality
 
 on:
   pull_request:
+    types: [opened, synchronize] # Se ejecuta al abrir o actualizar un PR
     branches:
       - main
       - diego
