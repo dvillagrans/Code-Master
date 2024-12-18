@@ -49,8 +49,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Toaster } from "@/components/ui/toaster"
-import { useToast } from "../../hooks/use-toast"
 import Header from "@/components/Common/Header";
 import Footer from "@/components/Common/Footer";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -63,6 +61,7 @@ import { cn } from "@/lib/utils" // Asegúrate de agregar esta importación
 import ProblemCard from "./ProblemCard"
 import FiltersPanel from "./FiltersPanel"
 import RankingPanel from "./RankingPanel";
+import { toast } from 'sonner' // Cambiar esta importación
 
 const ProblemsList = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
@@ -71,7 +70,6 @@ const ProblemsList = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState("All")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
   const [completionFilter, setCompletionFilter] = useState("all")
   const [topUsers, setTopUsers] = useState<{username: string, points: number}[]>([])
   const [progressStats, setProgressStats] = useState({
@@ -142,11 +140,7 @@ const ProblemsList = () => {
     const fetchProblems = async () => {
       const accessToken = Cookies.get("access_token")
       if (!accessToken) {
-        toast({
-          title: "Authentication Error",
-          description: "No access token found",
-          variant: "destructive"
-        })
+        toast.error("No access token found");
         setLoading(false)
         return
       }
@@ -165,18 +159,10 @@ const ProblemsList = () => {
           const data = await response.json()
           setProblems(data.problems)
         } else {
-          toast({
-            title: "Fetch Error",
-            description: "Error loading problems",
-            variant: "destructive"
-          })
+          toast.error("Error loading problems");
         }
       } catch (error) {
-        toast({
-          title: "Network Error",
-          description: "Could not connect to server",
-          variant: "destructive"
-        })
+        toast.error("Could not connect to server");
       } finally {
         setLoading(false)
       }
@@ -352,7 +338,6 @@ const ProblemsList = () => {
         
       </div>
     </div>
-      <Toaster />
       <Footer />
     </div>
   )
