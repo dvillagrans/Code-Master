@@ -8,7 +8,9 @@ export default defineConfig({
     tailwind({
       applyBaseStyles: false,
     }),
-    react(),
+    react({
+      include: ['**/react/*', '**/components/**/*.{jsx,tsx}'],
+    }),
   ],
   output: 'server', // Cambiar 'hybrid' a 'server' o 'static'
   adapter: vercel(), // Usa el adaptador adecuado para el despliegue

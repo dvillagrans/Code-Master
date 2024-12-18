@@ -1,6 +1,7 @@
 ---
 import "@/styles/globals.css";
 import ProblemsList from "../components/Problems/Problems";
+import { ThemeProvider } from "@/context/ThemeContext";
 ---
 
 <!doctype html>
@@ -8,9 +9,17 @@ import ProblemsList from "../components/Problems/Problems";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Landing Page - Club de Ciencia de Datos</title>
+    <title>Problemas - CodeMaster Pro</title>
   </head>
-  <body class="flex flex-col min-h-screen">
-    <ProblemsList client:load />
+  <body>
+    <ThemeProvider client:only="react">
+      <ProblemsList client:only="react" />
+    </ThemeProvider>
   </body>
 </html>
+
+<script>
+  // Aplicar tema inicial
+  const theme = localStorage.getItem("theme") || "light";
+  document.documentElement.classList.toggle("dark", theme === "dark");
+</script>

@@ -1,5 +1,4 @@
 ---
-import { ThemeProvider } from "@/context/ThemeContext";
 import "@/styles/globals.css";
 
 interface Props {
@@ -15,17 +14,13 @@ const { title } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
-    <script is:inline>
-      if (localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    </script>
   </head>
   <body>
-    <ThemeProvider client:load>
-      <slot />
-    </ThemeProvider>
+    <slot />
   </body>
 </html>
+
+<script is:inline>
+  const theme = localStorage.getItem("theme") ?? "light";
+  document.documentElement.classList.toggle("dark", theme === "dark");
+</script>

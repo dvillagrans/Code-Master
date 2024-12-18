@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface NavLinkProps {
   href: string;
@@ -181,34 +182,6 @@ const UserMenu = () => {
 };
 
 const Header = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
-
-  const handleLogout = () => {
-    try {
-      // Limpiar todas las cookies
-      Cookies.remove('access_token');
-      Cookies.remove('refresh_token');
-      Cookies.remove('user_data');
-      
-      // Mostrar mensaje de éxito
-      toast.success('Sesión cerrada correctamente');
-      
-      // Redirigir al login
-      window.location.href = '/';
-    } catch (error) {
-      toast.error('Error al cerrar sesión');
-    }
-  };
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"))
-  }
-
-  useEffect(() => {
-    document.body.classList.remove("light", "dark")
-    document.body.classList.add(theme)
-  }, [theme])
-
   return (
     <header className="shadow-lg border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
       <div className="container mx-auto px-4 py-4">
@@ -226,14 +199,7 @@ const Header = () => {
             <NavLink href="/problems" icon={BsCode}>Problems</NavLink>
             
             <div className="flex items-center space-x-2 border-l pl-6 ml-2 border-gray-200 dark:border-gray-700">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={toggleTheme}
-              >
-                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </Button>
-              
+              <ThemeToggle />
               <UserMenu />
             </div>
           </nav>
