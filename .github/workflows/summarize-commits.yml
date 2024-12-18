@@ -43,7 +43,7 @@ jobs:
 
       - name: Update Documentation
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
         run: |
           # Crear directorio docs si no existe
           mkdir -p docs

@@ -32,7 +32,7 @@ jobs:
           echo "prs=$PRS" >> $GITHUB_ENV
           echo "issues=$ISSUES" >> $GITHUB_ENV
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
 
       - name: Generar Resumen IA
         id: ai_summary

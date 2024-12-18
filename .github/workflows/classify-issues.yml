@@ -27,6 +27,6 @@ jobs:
 
       - name: Añadir Etiqueta
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
         run: |
           gh issue edit ${{ github.event.issue.number }} --add-label "${{ env.label }}"
