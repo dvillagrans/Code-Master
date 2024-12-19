@@ -86,6 +86,7 @@ const StreakIndicator = ({ streak }: { streak: number }) => {
 const UserMenu = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const DEFAULT_AVATAR = "https://i.ibb.co/5Wy9XrP/default-avatar.png"; // URL de avatar por defecto
+  const BASE_URL = "http://127.0.0.1:8000"; // Agregamos la URL base del backend
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -93,7 +94,7 @@ const UserMenu = () => {
       if (!accessToken) return;
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/users/profile/", {
+        const response = await fetch(`${BASE_URL}/users/profile/`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -101,6 +102,16 @@ const UserMenu = () => {
 
         if (response.ok) {
           const data = await response.json();
+          // Corregimos la construcción de la URL del avatar
+          if (data.avatar) {
+            // Si la ruta ya es una URL completa, la usamos directamente
+            if (data.avatar.startsWith('http')) {
+              data.avatar = data.avatar;
+            } else {
+              // Si es una ruta relativa, construimos la URL completa
+              data.avatar = `${BASE_URL}/media/${data.avatar}`;
+            }
+          }
           setUserData(data);
         }
       } catch (error) {

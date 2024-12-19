@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     
     # Apps
     'users',
-    'problems',
+    'problems',  # Asegúrate que esta línea esté presente
     'solutions',
     'testcases',
     'tags',
@@ -285,3 +285,8 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+
+# ...existing code...
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

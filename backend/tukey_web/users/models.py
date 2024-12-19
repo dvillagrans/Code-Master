@@ -35,7 +35,7 @@ class CustomUser(AbstractUser):
         upload_to=user_avatar_upload_path,
         null=True,
         blank=True,
-        default="avatars/default_avatar.png"
+        default="default_avatar.jpg"  # Quitamos 'avatars/' del valor por defecto
     )
 
     # Estadísticas del usuario

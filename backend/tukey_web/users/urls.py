@@ -34,3 +34,5 @@ urlpatterns = [
 
 # Agregar rutas del router
 urlpatterns += router.urls
+
+
