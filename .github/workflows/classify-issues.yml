@@ -16,7 +16,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          ANALYSIS=$(curl -X POST "https://api.openai.com/v1/chat/completions" \
+          echo "Analizando issue: ${{ github.event.issue.title }}"
+          RESPONSE=$(curl -s -X POST "https://api.openai.com/v1/chat/completions" \
             -H "Authorization: Bearer $OPENAI_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
@@ -25,23 +26,25 @@ jobs:
                 {"role": "system", "content": "Clasifica este issue en una de estas categorías: bug, feature, documentation, question"},
                 {"role": "user", "content": "${{ github.event.issue.title }}\n${{ github.event.issue.body }}"}
               ]
-            }' | jq -r '.choices[0].message.content')
+            }')
 
-          # Validar que ANALYSIS no esté vacío
-          if [ -z "$ANALYSIS" ]; then
-            echo "Error: No se pudo obtener una clasificación válida"
-            exit 1
+          ANALYSIS=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "unclassified"')
+
+          # Validar que ANALYSIS sea una categoría válida
+          VALID_LABELS=("bug" "feature" "documentation" "question")
+          if [[ ! " ${VALID_LABELS[@]} " =~ " ${ANALYSIS} " ]]; then
+            echo "Categoría inválida recibida: $ANALYSIS. Asignando categoría 'unclassified'."
+            ANALYSIS="unclassified"
           fi
 
           echo "label=$ANALYSIS" >> $GITHUB_ENV
 
       - name: Añadir Etiqueta
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -n "${{ env.label }}" ]; then
+          if [ "${{ env.label }}" != "unclassified" ]; then
             gh issue edit ${{ github.event.issue.number }} --add-label "${{ env.label }}"
           else
-            echo "Error: La etiqueta está vacía"
-            exit 1
+            echo "No se pudo determinar una etiqueta válida. El issue permanecerá sin clasificar."
           fi
