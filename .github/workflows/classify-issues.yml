@@ -8,6 +8,9 @@ jobs:
   classify:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Analizar Issue
         id: analyze
         env:
@@ -23,10 +26,22 @@ jobs:
                 {"role": "user", "content": "${{ github.event.issue.title }}\n${{ github.event.issue.body }}"}
               ]
             }' | jq -r '.choices[0].message.content')
+
+          # Validar que ANALYSIS no esté vacío
+          if [ -z "$ANALYSIS" ]; then
+            echo "Error: No se pudo obtener una clasificación válida"
+            exit 1
+          fi
+
           echo "label=$ANALYSIS" >> $GITHUB_ENV
 
       - name: Añadir Etiqueta
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
         run: |
-          gh issue edit ${{ github.event.issue.number }} --add-label "${{ env.label }}"
+          if [ -n "${{ env.label }}" ]; then
+            gh issue edit ${{ github.event.issue.number }} --add-label "${{ env.label }}"
+          else
+            echo "Error: La etiqueta está vacía"
+            exit 1
+          fi

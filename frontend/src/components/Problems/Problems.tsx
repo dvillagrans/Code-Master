@@ -138,11 +138,13 @@ const ProblemsList = () => {
 
   useEffect(() => {
     const fetchProblems = async () => {
-      const accessToken = Cookies.get("access_token")
+      setLoading(true);
+      const accessToken = Cookies.get("access_token");
+      
       if (!accessToken) {
-        toast.error("No access token found");
-        setLoading(false)
-        return
+        toast.error("Por favor, inicia sesión para ver los problemas");
+        setLoading(false);
+        return;
       }
 
       try {
@@ -151,23 +153,34 @@ const ProblemsList = () => {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`
+            "Authorization": `Bearer ${accessToken}`
           }
-        })
+        });
 
-        if (response.ok) {
-          const data = await response.json()
-          setProblems(data.problems)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        if (Array.isArray(data.problems)) {
+          setProblems(data.problems);
         } else {
-          toast.error("Error loading problems");
+          console.error("Formato de respuesta inesperado:", data);
+          toast.error("Error en el formato de datos recibidos");
         }
       } catch (error) {
-        toast.error("Could not connect to server");
+        console.error("Error fetching problems:", error);
+        toast.error(error instanceof Error ? error.message : "Error al cargar los problemas");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
+    fetchProblems();
+  }, [])
+
+  useEffect(() => {
     const fetchTopUsers = async () => {
       const accessToken = Cookies.get("access_token")
       try {
@@ -189,7 +202,6 @@ const ProblemsList = () => {
       }
     }
 
-    fetchProblems()
     fetchTopUsers()
   }, [])
 

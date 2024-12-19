@@ -177,6 +177,10 @@ const UserMenu = () => {
             <User className="mr-2 h-4 w-4" />
             <span>Perfil</span>
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = '/dashboard'}>
+            <BsHouseDoor className="mr-2 h-4 w-4" />
+            <span>Dashboard</span>
+          </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
             <span>Configuración</span>
