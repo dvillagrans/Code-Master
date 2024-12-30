@@ -164,6 +164,8 @@ const loginWithGoogle = async () => {
         window.location.href = '/admin';
         break;
       case 'user':
+        window.location.href = '/problems';
+        break;
       default:
         window.location.href = '/problems';
         break;

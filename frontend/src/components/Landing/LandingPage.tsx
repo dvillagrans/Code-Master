@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { 
   BsLightningCharge, 
   BsTrophy, 
@@ -26,6 +26,10 @@ import Footer from "../Common/Footer";
 import Header from "../Common/Header";
 import PublicHeader from "../Common/PublicHeader";
 import CodeCard from "../ui/code-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { Prism } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 const StatCard = ({ number, label, icon: Icon }: { number: string; label: string; icon: any }) => (
   <div className="text-center">
@@ -45,14 +49,163 @@ const FeatureCard = ({ icon: Icon, title, description }: { icon: any; title: str
   </Card>
 );
 
-const LandingPage = () => {
+const PricingCard = ({ title, price, features, recommended = false }: { 
+  title: string; 
+  price: string; 
+  features: string[];
+  recommended?: boolean;
+}) => (
+  <Card className={cn(
+    "relative overflow-hidden",
+    recommended && "border-purple-600 shadow-xl"
+  )}>
+    {recommended && (
+      <div className="absolute top-0 right-0 bg-purple-600 text-white px-4 py-1 rounded-bl-lg">
+        Recomendado
+      </div>
+    )}
+    <CardContent className="pt-6">
+      <h3 className="text-xl font-bold mb-2">{title}</h3>
+      <div className="mb-4">
+        <span className="text-4xl font-bold">{price}</span>
+        <span className="text-gray-600 dark:text-gray-400">/mes</span>
+      </div>
+      <ul className="space-y-2">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-center gap-2">
+            <BsCheckCircle className="text-green-500" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <Button 
+        className={cn(
+          "w-full mt-6",
+          recommended ? "bg-purple-600 hover:bg-purple-700" : "bg-gray-800 hover:bg-gray-900"
+        )}
+      >
+        Comenzar Ahora
+      </Button>
+    </CardContent>
+  </Card>
+);
+
+const InteractiveCode = () => {
+  const [code, setCode] = useState(`# Codigo de fibbonacci en Python
+    def fibonacci(n):
+      a, b = 0, 1
+      for _ in range(n):
+        a, b = b, a + b
+        return a
+        print(fibonacci(10))`);
+
+  return (
+    <div className="rounded-lg overflow-hidden shadow-xl">
+      <div className="bg-gray-800 p-4 flex justify-between items-center">
+        <div className="flex space-x-2">
+          <div className="w-3 h-3 rounded-full bg-red-500"/>
+          <div className="w-3 h-3 rounded-full bg-yellow-500"/>
+          <div className="w-3 h-3 rounded-full bg-green-500"/>
+        </div>
+        <span className="text-gray-400">script.py</span>
+      </div>
+      <Prism
+        language="python"
+        style={vscDarkPlus}
+        className="text-sm"
+        showLineNumbers
+      >
+        {code}
+      </Prism>
+    </div>
+  );
+};
+
+const ProjectGallery = () => {
+  const projects = [
+    {
+      title: "Todo App",
+      image: "/projects/todo.png",
+      tags: ["React", "TypeScript", "Tailwind"],
+      difficulty: "Principiante"
+    },
+    {
+      title: "Chat en Tiempo Real",
+      image: "/projects/chat.png",
+      tags: ["Socket.io", "Node.js", "Express"],
+      difficulty: "Intermedio"
+    },
+    {
+      title: "E-commerce API",
+      image: "/projects/ecommerce.png",
+      tags: ["REST API", "MongoDB", "JWT"],
+      difficulty: "Avanzado"
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {projects.map((project, index) => (
+        <Card key={index} className="overflow-hidden group hover:shadow-xl transition-all">
+          <div className="relative h-48 bg-purple-100 dark:bg-gray-800">
+            <div className="absolute inset-0 flex items-center justify-center text-4xl text-purple-500">
+              <BsCode />
+            </div>
+          </div>
+          <CardContent className="p-6">
+            <h3 className="font-bold text-xl mb-2">{project.title}</h3>
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {project.tags.map((tag, i) => (
+                <Badge key={i} variant="secondary">{tag}</Badge>
+              ))}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Dificultad: {project.difficulty}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+const TechStack = () => {
+  const technologies = [
+    { name: "React", icon: "/tech/react.svg" },
+    { name: "TypeScript", icon: "/tech/typescript.svg" },
+    { name: "Node.js", icon: "/tech/nodejs.svg" },
+    { name: "Python", icon: "/tech/python.svg" },
+    { name: "MongoDB", icon: "/tech/mongodb.svg" },
+    { name: "Docker", icon: "/tech/docker.svg" }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+      {technologies.map((tech, index) => (
+        <motion.div
+          key={index}
+          className="flex flex-col items-center"
+          whileHover={{ scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="w-20 h-20 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <img src={tech.icon} alt={tech.name} className="w-12 h-12" />
+          </div>
+          <span className="mt-2 text-sm font-medium">{tech.name}</span>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+const LandingPage: React.FC = () => {
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="relative min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {isAuthenticated ? <Header /> : <PublicHeader />}
 
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -200,12 +353,12 @@ const LandingPage = () => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="container mx-auto px-4 py-24 bg-gray-50 dark:bg-gray-900/30"
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="container mx-auto px-4 py-24 text-center"
       >
-        <h2 className="text-4xl font-bold mb-16">
+        <h2 className="text-4xl font-bold mb-12">
           <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            ¿Por qué elegirnos?
+          ¿Por qué elegirnos?
           </span>
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -256,6 +409,53 @@ const LandingPage = () => {
           />
         </div>
       </motion.section>
+
+          {/*
+      <motion.section
+        className="container mx-auto px-4 py-24 bg-gray-50 dark:bg-gray-900/30"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+      >
+        <h2 className="text-4xl font-bold text-center mb-16">
+          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Planes que se Adaptan a Ti
+          </span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <PricingCard
+            title="Básico"
+            price="$0"
+            features={[
+              "Acceso a problemas básicos",
+              "Comunidad de apoyo",
+              "Recursos de aprendizaje"
+            ]}
+          />
+          <PricingCard
+            title="Pro"
+            price="$19"
+            features={[
+              "Todo lo del plan Básico",
+              "Problemas avanzados",
+              "Mentoría personalizada",
+              "Certificados verificados"
+            ]}
+            recommended={true}
+          />
+          <PricingCard
+            title="Empresas"
+            price="$49"
+            features={[
+              "Todo lo del plan Pro",
+              "Soporte prioritario",
+              "API access",
+              "Dashboard empresarial"
+            ]}
+          />
+        </div>
+      </motion.section>
+            */}
 
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -334,6 +534,39 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
+      {/* Nueva sección de código interactivo */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="container mx-auto px-4 py-24"
+      >
+        <h2 className="text-4xl font-bold text-center mb-16">
+          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Código Interactivo en Tiempo Real
+          </span>
+        </h2>
+        <div className="max-w-3xl mx-auto">
+          <InteractiveCode />
+        </div>
+      </motion.section>
+
+      {/* Nueva sección de tecnologías */}
+      {/*<motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="container mx-auto px-4 py-24"
+      >
+        <h2 className="text-4xl font-bold text-center mb-16">
+          <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Tecnologías que Dominamos
+          </span>
+        </h2>
+        <TechStack />
+      </motion.section>
+        */}
+
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -358,6 +591,7 @@ const LandingPage = () => {
         </Button>
         </a>
       </motion.section>
+
 
       <Footer />
 

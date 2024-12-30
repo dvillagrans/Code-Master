@@ -65,7 +65,7 @@ const Footer = () => {
     >
       <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          © {new Date().getFullYear()} DataScience Club. 
+          © {new Date().getFullYear()} DiegoV. 
           Todos los derechos reservados.
         </div>
         
@@ -111,19 +111,6 @@ const Footer = () => {
               </a>
             </Button>
             
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              asChild
-            >
-              <a
-                href="https://twitter.com/your-org" 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-            </Button>
           </div>
         </div>
       </div>

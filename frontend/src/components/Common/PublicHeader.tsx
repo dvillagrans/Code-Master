@@ -22,7 +22,7 @@ const PublicHeader = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-purple-600" />
             <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Tukey
+              CodeMaster
             </span>
           </div>
 

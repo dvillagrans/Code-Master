@@ -41,8 +41,11 @@ import {
 } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Editor } from "@/components/ui/editor";
 import ResultsModal from "./ResultsModal";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Zap, Brain, Trophy } from "lucide-react";
+import  ExampleCard  from "./ExampleCard";
+import CodeEditor from "./CodeEditor";
 
 interface Problem {
   id: number;
@@ -81,6 +84,74 @@ interface Submission {
   memory_usage: number;
   submitted_at: string;
 }
+
+// Nuevo componente para el indicador de estado
+const StatusIndicator = ({ status }: { status: string }) => (
+  <motion.div
+    initial={{ scale: 0.8, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    className={cn(
+      "px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2",
+      status === "Accepted" && "bg-green-500/10 text-green-500",
+      status === "Wrong Answer" && "bg-red-500/10 text-red-500",
+      status === "Running" && "bg-blue-500/10 text-blue-500"
+    )}
+  >
+    {status === "Accepted" && <Sparkles className="h-4 w-4" />}
+    {status === "Wrong Answer" && <XCircle className="h-4 w-4" />}
+    {status === "Running" && (
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+      >
+        <Activity className="h-4 w-4" />
+      </motion.div>
+    )}
+    {status}
+  </motion.div>
+);
+
+
+// Mejorar el botón de envío
+const SubmitButton = ({ onClick, loading }: { onClick: () => void; loading: boolean }) => (
+  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+    <Button
+      onClick={onClick}
+      disabled={loading}
+      className="w-full relative overflow-hidden group"
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-primary/50 to-primary opacity-0 group-hover:opacity-100 transition-opacity"
+        animate={loading ? {
+          x: ["0%", "100%"],
+          opacity: [0, 1, 0],
+        } : {}}
+        transition={{
+          duration: 1,
+          repeat: loading ? Infinity : 0,
+          ease: "easeInOut",
+        }}
+      />
+      <span className="relative flex items-center justify-center gap-2">
+        {loading ? (
+          <>
+            <motion.div
+              className="h-4 w-4 rounded-full border-2 border-primary border-r-transparent"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            Ejecutando...
+          </>
+        ) : (
+          <>
+            <Zap className="h-4 w-4" />
+            Enviar Solución
+          </>
+        )}
+      </span>
+    </Button>
+  </motion.div>
+);
 
 const ProblemShowcase: React.FC<ProblemShowcaseProps> = ({ id }) => {
   const { isDarkMode } = useTheme();
@@ -458,21 +529,7 @@ if (loading) return (
                       <Carousel>
                         <CarouselContent>
                           {problem.examples.map((example, index) => (
-                            <CarouselItem key={index}>
-                              <Card>
-                                <CardContent className="p-4 space-y-4">
-                                  <div className="space-y-2">
-                                    <Badge variant="outline">Ejemplo {index + 1}</Badge>
-                                    <div className="space-y-2">
-                                      <Code className="w-full p-3">{`Input: ${example.input}`}</Code>
-                                      <Code className="w-full p-3">{`Output: ${example.output}`}</Code>
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </CarouselItem>
+                            <ExampleCard key={index} example={example} index={index} />
                           ))}
                         </CarouselContent>
                         <CarouselPrevious />
@@ -558,28 +615,9 @@ if (loading) return (
           {/* Code Editor Card */}
           <div className="space-y-6">
           <CardContent className="space-y-4">
-  <Editor
-    value={code}
-    onChange={setCode}
-    placeholder="Escribe tu solución aquí..."
-    className="font-mono bg-muted"
-    language="python"
-  />
+  <CodeEditor value={code} onChange={setCode} />
   <div className="flex gap-2">
-    <Button 
-      onClick={handleSubmit} 
-      disabled={submitting}
-      className="w-full"
-    >
-      {submitting ? (
-        <>
-          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-          Ejecutando...
-        </>
-      ) : (
-        "Enviar Solución"
-      )}
-    </Button>
+    <SubmitButton onClick={handleSubmit} loading={submitting} />
     <Button 
       variant="outline" 
       onClick={handleReset}

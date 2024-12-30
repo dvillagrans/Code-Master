@@ -113,3 +113,24 @@
   50% { opacity: .5; }
 }
 
+.react-calendar-heatmap text {
+  font-size: 10px;
+  fill: var(--muted-foreground);
+}
+
+.react-calendar-heatmap .color-empty {
+  fill: var(--muted);
+}
+
+.react-calendar-heatmap .color-scale-1 { fill: var(--primary/30); }
+.react-calendar-heatmap .color-scale-2 { fill: var(--primary/50); }
+.react-calendar-heatmap .color-scale-3 { fill: var(--primary/70); }
+.react-calendar-heatmap .color-scale-4 { fill: var(--primary); }
+
+.card-hover-effect {
+  @apply transition-all duration-300 hover:shadow-lg hover:translate-y-[-2px];
+}
+
+.gradient-text {
+  @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
+}

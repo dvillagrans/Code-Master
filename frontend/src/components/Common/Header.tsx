@@ -85,8 +85,8 @@ const StreakIndicator = ({ streak }: { streak: number }) => {
 
 const UserMenu = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const DEFAULT_AVATAR = "https://i.ibb.co/5Wy9XrP/default-avatar.png"; // URL de avatar por defecto
-  const BASE_URL = "http://127.0.0.1:8000"; // Agregamos la URL base del backend
+  const DEFAULT_AVATAR = "https://i.ibb.co/5Wy9XrP/default-avatar.png";
+  const BASE_URL = "http://127.0.0.1:8000";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -102,15 +102,16 @@ const UserMenu = () => {
 
         if (response.ok) {
           const data = await response.json();
-          // Corregimos la construcción de la URL del avatar
+          // Asegurarse de que la URL del avatar sea absoluta
           if (data.avatar) {
-            // Si la ruta ya es una URL completa, la usamos directamente
-            if (data.avatar.startsWith('http')) {
-              data.avatar = data.avatar;
-            } else {
-              // Si es una ruta relativa, construimos la URL completa
-              data.avatar = `${BASE_URL}/media/${data.avatar}`;
+            // Eliminar cualquier slash inicial para evitar dobles slashes
+            const avatarPath = data.avatar.replace(/^\//, '');
+            // Si no es una URL completa, construir la URL completa
+            if (!avatarPath.startsWith('http')) {
+              data.avatar = `${BASE_URL}${avatarPath.startsWith('media/') ? '/' : '/media/'}${avatarPath}`;
             }
+          } else {
+            data.avatar = DEFAULT_AVATAR;
           }
           setUserData(data);
         }
@@ -138,16 +139,19 @@ const UserMenu = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent pr-8">
-          <Avatar className="h-full w-full">
+          <Avatar className="h-8 w-8">
             <AvatarImage 
               src={userData?.avatar || DEFAULT_AVATAR} 
               alt={userData?.name || "Usuario"} 
+              className="object-cover w-full h-full"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = DEFAULT_AVATAR;
+                console.log('Avatar actual:', userData?.avatar);
+                console.log('Fallback a:', DEFAULT_AVATAR);
               }}
             />
-            <AvatarFallback>
+            <AvatarFallback delayMs={600}>
               {userData ? userData.name.charAt(0) + userData.last_name.charAt(0) : "UN"}
             </AvatarFallback>
           </Avatar>
@@ -205,7 +209,7 @@ const Header = () => {
             <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             <Toaster richColors position='top-left' />
             <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-              CodeMaster Pro
+              CodeMaster
             </span>
           </div>
           
